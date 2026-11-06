@@ -52,6 +52,24 @@ const $ = id => document.getElementById(id);
 const store = { get(){ try { return localStorage.getItem(LS) || ''; } catch(e){ return ''; } }, set(v){ try { localStorage.setItem(LS, v); } catch(e){} }, del(){ try { localStorage.removeItem(LS); } catch(e){} } };
 const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 
+// Расшифровка: встроенная криптография браузера, а если её нет (старый браузер или http) — запасная библиотека.
+const bin = u => { let s = ''; for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode.apply(null, u.subarray(i, i + 32768)); return s; };
+const loadForge = () => window.forge ? Promise.resolve() : new Promise((ok, bad) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/forge/1.3.1/forge.min.js'; sc.onload = ok; sc.onerror = () => bad(new Error('Не загрузилась библиотека расшифровки. Проверь интернет.')); document.head.appendChild(sc); });
+async function decrypt(keyBytes, buf) {
+  const iv = buf.subarray(0, 12), data = buf.subarray(12);
+  if (window.crypto && crypto.subtle) {
+    const key = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['decrypt']);
+    return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data));
+  }
+  await loadForge();
+  const f = window.forge, tag = data.subarray(data.length - 16), ct = data.subarray(0, data.length - 16);
+  const d = f.cipher.createDecipher('AES-GCM', f.util.createBuffer(bin(keyBytes)));
+  d.start({ iv: bin(iv), tag: f.util.createBuffer(bin(tag)) });
+  d.update(f.util.createBuffer(bin(ct)));
+  if (!d.finish()) throw new Error('Не получилось открыть автомат. Обнови страницу.');
+  return f.util.decodeUtf8(d.output.getBytes());
+}
+
 async function openMachine(code, auto) {
   code = String(code || '').trim().toUpperCase().replace(/\s+/g, '');
   if (!code) return;
@@ -61,8 +79,7 @@ async function openMachine(code, auto) {
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.key) throw new Error(j.error || 'Код не подошёл.');
     const buf = new Uint8Array(await (await fetch('machine.bin', { cache: 'no-cache' })).arrayBuffer());
-    const key = await crypto.subtle.importKey('raw', b64(j.key), 'AES-GCM', false, ['decrypt']);
-    const html = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(0, 12) }, key, buf.slice(12)));
+    const html = await decrypt(b64(j.key), buf);
     store.set(code);
     if (location.search) history.replaceState(null, '', location.pathname);
     document.open(); document.write(html); document.close();
