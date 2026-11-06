@@ -1,4 +1,2 @@
-d1.mp3 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_151519_01a7f4de-ccd1-4d26-92a0-30df37d86515.mp3
-d3.mp3 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_151521_fdae3cc2-0f14-47cd-9287-6444dd3eb0a8.mp3
-chernavka_golos_1.mp3 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_151633_bcd5986b-96f6-4e36-a187-bc3e6ca73de6.mp3
-chernavka_golos_2.mp3 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_151633_b88f0483-52bf-45c3-83eb-365440bd0574.mp3
+c15.mp4 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_151556_b9fcb2e7-b4c0-43c1-98b0-2a33742bce1e.mp4
+c06.mp4 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_151622_c81da9c8-8f16-473a-aecc-f37230eb0993.mp4
