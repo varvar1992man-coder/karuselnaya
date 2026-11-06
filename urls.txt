@@ -1,4 +1,2 @@
-s1_hall.mp4 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_041748_9a54fce1-42fe-4b44-9146-2d08095777de.mp4
-s2_tear.mp4 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_041738_1e1d6605-92ce-44e2-8ebc-c9bfe5abbefe.mp4
-s3_bowl.mp4 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_041748_84a46423-e7fc-46b8-89f0-098f2914b721.mp4
-s4_tsar.mp4 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_041748_5237a47b-315e-4bf4-9d46-f049d6a96b31.mp4
+k1.png https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_050332_257f517e-d6d1-42b9-9e8d-382e93e1548b.png
+k2.png https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_050506_384ae571-ee0e-451d-bb85-e3407d963598.png
