@@ -1,2 +1,3 @@
-v1.mp4 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_050728_0017b680-774c-4575-95c8-720d7b12c93f.mp4
-v2.mp4 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_050729_150c799d-6a53-46fb-8069-7e7264e605a5.mp4
+q_nano.png https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_055038_d19fa353-7eba-4374-882f-540cfca8fde2.png
+q_seed.png https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_055038_1843dad9-5030-426c-8ee8-a2db1b605c73.png
+q_soul.png https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_055038_422e254b-c4c3-4613-90b1-293c14b3e12c.png
