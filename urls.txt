@@ -1,2 +1,2 @@
-d3b.mp3 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_155129_b6b145b5-ce24-4b96-9658-69be49f8db87.mp3
-d4b.mp3 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_155129_6d17a1a1-97af-4e4d-a1bc-4cb8428a5a8f.mp3
+velela_variant_1.mp3 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_160948_77f357fb-61c5-42f0-b641-e38e929d868f.mp3
+velela_variant_2.mp3 https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_160949_e70e121e-f2b5-4159-9d0a-ae003841766c.mp3
