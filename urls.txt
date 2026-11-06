@@ -1,5 +1,1 @@
-queen_full.png https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_055543_642808b6-93c6-4aee-9b42-d6900b927a35.png
-tsarevna_close.png https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_055544_a533d188-78c0-45c3-85b3-684042a20b9e.png
-tsarevna_garden.png https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_055652_f7e44ae7-33fc-4b1f-a3bf-ea9727c4cef2.png
-mirror.png https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_055543_c2636360-dd61-42e7-8932-08fbd451030b.png
-chernavka.png https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_055543_530f7dcb-3bf1-41e8-8147-70cc46f341cb.png
+tsarevna18_close.png https://d8j0ntlcm91z4.cloudfront.net/user_3JcE6PYkCKDSij81riks0delp2C/hf_20261106_060028_bcd59fd9-221b-4564-80fe-e33c7d6b812a.png
