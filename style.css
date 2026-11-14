@@ -178,3 +178,5 @@ footer ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;
 .more{margin:18px 0 0;text-align:center;font-family:var(--f-head);text-transform:uppercase;letter-spacing:.06em;font-size:18px;font-weight:700;color:var(--red-text)}
 
 .have{margin:10px 0 0;font-size:14px}.have a{color:var(--red-text)}
+
+.hero .cta .try,.cta .try{font-weight:700;color:var(--red-text);text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
