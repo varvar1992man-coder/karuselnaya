@@ -369,14 +369,14 @@ body{background-image:radial-gradient(color-mix(in srgb,var(--ink) 6%,transparen
     <div class="side">
       <section class="card agent">
         <div class="step"><i>0</i>Пробная карусель</div>
-        <p style="margin:0">Бесплатно: одна карусель с водяным знаком. Напиши свои слайды в шаге 1, добавь фото, выбери цвет и нажми «Выдать карусели».</p>
-        <p class="hint">В полном доступе: агенты «Эксперт», «Лайф» и «Бизнес» сами пишут 9 каруселей с цепляющими хуками, до 7 оформлений на каждую, без водяного знака и без лимитов.</p>
+        <p style="margin:0">Здесь работает всё: любые цвета, все виды оформления, до 7 вариантов на текст, свои фото. Только на каждом слайде водяной знак.</p>
+        <p class="hint">Нажми «Вставить пример» в шаге 1 или напиши свои слайды во вкладке «Своими словами». Агенты «Эксперт», «Лайф» и «Бизнес», которые пишут 9 каруселей с хуками под твой блог, и карусели без водяного знака открываются после покупки.</p>
         <div class="row2"><a class="btn primary" href="../#price" style="text-decoration:none;text-align:center">Купить полный доступ</a></div>
         <div hidden><button id="copyAE"></button><button id="copyAL"></button><button id="copyAB"></button><button id="copyA2"></button></div>
       </section>
       <section class="card">
         <div class="step"><i>1</i>Текст <small id="parsed">0 каруселей</small></div>
-        <div class="mode" id="srcTabs" hidden><button type="button" data-tab="agent" aria-pressed="true">Текст от агента</button><button type="button" data-tab="own" aria-pressed="false">Своими словами</button></div>
+        <div class="mode" id="srcTabs"><button type="button" data-tab="agent" aria-pressed="true">Текст от агента</button><button type="button" data-tab="own" aria-pressed="false">Своими словами</button></div>
         <div id="ownBox" hidden></div>
         <div id="agentBox" style="display:contents"><textarea id="src" spellcheck="false" placeholder="Вставь сюда ответ агента целиком.&#10;&#10;Выглядит он так:&#10;Карусель 1&#10;Обложка: 5 ошибок, из-за которых | ты не худеешь&#10;Слайд: Ешь по чуть-чуть весь день | Перекусы мешают худеть.&#10;Финал: Хочешь разбор рациона? | РАЦИОН"></textarea>
         <div class="mode"><button type="button" id="srcClear">Очистить</button><button type="button" id="srcDemo">Вставить пример</button></div></div>
@@ -404,7 +404,7 @@ body{background-image:radial-gradient(color-mix(in srgb,var(--ink) 6%,transparen
           <button type="button" data-scope="cover" aria-pressed="false">Только на обложке</button>
         </div>
         <p class="hint" style="margin-top:4px">Фото идут по порядку: 1‑е на обложке, 2‑е на втором слайде и так далее.</p>
-        <div class="mode" id="modeBox" hidden>
+        <div class="mode" id="modeBox">
           <button type="button" data-v="1" aria-pressed="true">1 вариант на текст</button>
           <button type="button" data-v="3" aria-pressed="false">3 варианта</button>
           <button type="button" data-v="7" aria-pressed="false">7 вариантов</button>
@@ -840,7 +840,7 @@ async function build(){
   if(tot>SLIDE_LIMIT&&!heavyOk){let n=0,acc=0;for(const j of jobs){acc+=j.c.slides.length+2;if(acc>SLIDE_LIMIT)break;n++;}partCap=Math.max(1,n);
     $('heavyText').textContent=`Это ${tot} ${plural(tot,['слайд','слайда','слайдов'])} за раз. На телефоне такая пачка может подвиснуть. Можно выдать первые ${partCap} ${plural(partCap,['карусель','карусели','каруселей'])}, а остальные следующей пачкой.`;
     $('heavyPart').textContent='Выдать первые '+partCap;$('heavyNote').hidden=false;$('heavyNote').scrollIntoView({block:'nearest'});return;}
-  $('heavyNote').hidden=true;const PART=heavyOk==='part';if(PART)jobs=jobs.slice(0,partCap);jobs=jobs.slice(0,1);heavyOk=false;
+  $('heavyNote').hidden=true;const PART=heavyOk==='part';if(PART)jobs=jobs.slice(0,partCap);heavyOk=false;
   if(!jobs.length){err.hidden=false;err.textContent='Не нашла ни одной карусели. Проверь, что текст начинается со строки «Карусель 1», а дальше идут «Обложка:», «Слайд:» и «Финал:».';return;}
   err.hidden=true;$('staleNote').hidden=true;renderStage(true,PART?partCap:0);building=true;$('go').disabled=true;$('saveAll').disabled=true;$('listhead').hidden=true;
   const M=$('machine');$('stageDone').hidden=true;$('stage').classList.add('show');$('stage').scrollTop=0;document.documentElement.style.overflow='hidden';
@@ -874,7 +874,7 @@ async function build(){
   }
   await new Promise(r=>setTimeout(r,reduce()?50:950));
   building=false;$('go').disabled=false;$('saveAll').disabled=false;M.classList.remove('on');$('listhead').hidden=false;$('selbar').hidden=false;updateSel();
-  try{localStorage.setItem(TRIAL_KEY,'1');}catch(e){}if(!$('trialBuy')){const a=document.createElement('a');a.id='trialBuy';a.className='btn primary';a.href='../#price';a.style.textDecoration='none';a.textContent='Убрать водяной знак: купить доступ';$('stageDone').prepend(a);}
+  if(!$('trialBuy')){const a=document.createElement('a');a.id='trialBuy';a.className='btn primary';a.href='../#price';a.style.textDecoration='none';a.textContent='Убрать водяной знак: купить доступ';$('stageDone').prepend(a);}
   $('stageDone').hidden=false;$('stageDone').scrollIntoView({behavior:reduce()?'auto':'smooth',block:'end'});
   $('mStatus').textContent=`выдано ✓ ${results.length} ${plural(results.length,['карусель','карусели','каруселей'])}`;chimeDone();
   toast(`Выдано: ${results.length} ${plural(results.length,['карусель','карусели','каруселей'])}. Приходите ещё!`);
@@ -1082,7 +1082,7 @@ let swiped=false;$('zoomImg').addEventListener('click',e=>{if(swiped){swiped=fal
 document.addEventListener('keydown',e=>{if($('zoom').hidden)return;if(e.key==='Escape'){closeViewer();e.stopImmediatePropagation();}else if(e.key==='ArrowRight')stepV(1);else if(e.key==='ArrowLeft')stepV(-1);},true);
 let tt;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2600);}
 layout=LAYOUTS[0];mixL=true;mixC=false;setToggle('mixC',false);
-V=1;setSrcTab('own');renderStyles();refresh();if(trialDone())trialLock();
+renderStyles();refresh();
 (async()=>{try{if(window.claude&&window.claude.use){dl=await window.claude.use('downloads');document.querySelectorAll('.car .btn').forEach(b=>b.textContent='Скачать');}}catch(e){dl=null;}})();
 </script>
 </body></html>
