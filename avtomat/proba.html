@@ -412,7 +412,7 @@ body{background-image:radial-gradient(color-mix(in srgb,var(--ink) 6%,transparen
         <div class="mode" id="modeBox">
           <button type="button" data-v="1" aria-pressed="true">1 вариант на текст</button>
           <button type="button" data-v="3" aria-pressed="false">3 варианта</button>
-          <button type="button" data-v="7" aria-pressed="false">7 вариантов</button>
+          <button type="button" data-v="7" aria-pressed="false">7 вариантов</button><button type="button" data-v="13" aria-pressed="false">13 вариантов: все виды</button>
         </div>
         <p class="hint" id="modeHint" hidden></p>
       </section>
@@ -1055,7 +1055,7 @@ function toBlob(cv){return new Promise(r=>cv.toBlob(b=>r(b),'image/jpeg',PHONE?.
 
 // ---------- build plan
 function plan(){const cars=parse(src.value);let jobs=[];
-  cars.forEach((c,i)=>{for(let v=0;v<V;v++)jobs.push({c,i,pi:photos.length?0:-1,j:V>1?v:null});});
+  const EV=mixL?V:1;cars.forEach((c,i)=>{for(let v=0;v<EV;v++)jobs.push({c,i,pi:photos.length?0:-1,j:EV>1?v:null});});
   return {cars,jobs:jobs.slice(0,MAXC)};}
 function refresh(){renderStage();if(typeof renderLayouts==='function'&&$('layouts'))renderLayouts();const {cars,jobs}=plan();
   const maxS=cars.reduce((m,c)=>Math.max(m,c.slides.length+2),0),nP=photos.length;
@@ -1063,15 +1063,15 @@ function refresh(){renderStage();if(typeof renderLayouts==='function'&&$('layout
   $('addMore').hidden=over;$('keepAlt').hidden=over;$('trimExtra').hidden=!over;
   if(over)$('photoNoteText').textContent=`В каруселях ${maxS} ${plural(maxS,['слайд','слайда','слайдов'])}, а фото ${nP}. Лишние ${nP-maxS} не войдут в карусели.`;
   if(need&&nP===1)$('photoNoteText').textContent=`Фото одно, поэтому оно встанет только на обложку, а остальные слайды будут цветом стиля. Добавь ещё фото, если хочешь их и внутри карусели.`;
-  else if(need)$('photoNoteText').textContent=`В каруселях до ${maxS} слайдов, а фото ${nP}. Добавь ещё ${maxS-nP}, чтобы фото было на каждом слайде, или оставь так: слайды пойдут через один, с фото и без, а последний будет без фото.`;
+  else if(need)$('photoNoteText').textContent=`В каруселях до ${maxS} слайдов, а фото ${nP}. Добавь ещё ${maxS-nP}, чтобы фото было на каждом слайде, или оставь так: фото пойдут по порядку, а остальные слайды будут без фото.`;
   $('parsed').textContent=cars.length+' '+plural(cars.length,['карусель','карусели','каруселей']);
-  $('fT').textContent=cars.length;$('fP').textContent=V;$('fR').textContent=jobs.length;
+  $('fT').textContent=cars.length;$('fP').textContent=mixL?V:1;$('fR').textContent=jobs.length;
   $('drop').textContent=maxS?(nP>=maxS?`Фото на все ${maxS} ${plural(maxS,['слайд','слайда','слайдов'])} добавлены`:`Добавь до ${maxS} фото, по одному на слайд · добавлено ${nP}`):'Нажми, чтобы выбрать фото из галереи';
   $('goSub').textContent='выдам '+jobs.length+' '+plural(jobs.length,['карусель','карусели','каруселей']);
   $('scopeBox').hidden=!photos.length;$('gradBox').hidden=!photos.length;
   const nc=cars.length,pl=n=>n+' '+plural(n,['карусель','карусели','каруселей']);
   $('modeHint').hidden=false;
-  $('modeHint').textContent=V===1?`Из каждого текста одна карусель: ${pl(nc)}.`:`Каждый текст в ${V} разных оформлениях: другие шрифты и раскладка, фото те же. ${nc} × ${V} = ${pl(Math.min(nc*V,MAXC))}, выберешь лучшие сердечком.`;}
+  $('modeHint').textContent=!mixL?`Включён любимый вид «${layout.name}», поэтому из каждого текста одна карусель: ${pl(nc)}. Чтобы получить разные оформления, верни все виды по очереди.`:V===1?`Из каждого текста одна карусель: ${pl(nc)}.`:`Каждый текст в ${V} разных оформлениях: другие шрифты и раскладка, фото те же. ${nc} × ${V} = ${pl(Math.min(nc*V,MAXC))}, выберешь лучшие сердечком.`;}
 function plural(n,f){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return f[2];if(n1>1&&n1<5)return f[1];if(n1===1)return f[0];return f[2];}
 
 const PHONE=matchMedia('(pointer:coarse)').matches&&Math.min(screen.width,screen.height)<820;
@@ -1147,7 +1147,7 @@ function renderStage(force,cap){let {cars,jobs}=plan();if(cap)jobs=jobs.slice(0,
       const cnt=jobs[k].c.slides.length+2;for(let q=0;q<cols;q++){const t=document.createElement('div');t.className='t';if(q>=cnt)t.style.visibility='hidden';r.appendChild(t);}w.appendChild(r);}
     if(jobs.length>MAXROWS){const m=document.createElement('div');m.className='more';m.style.textAlign='center';m.textContent='и ещё '+(jobs.length-MAXROWS)+' в списке ниже';w.appendChild(m);}
     $('wN').textContent=jobs.length;
-    $('wCap').innerHTML=`${plural(jobs.length,['карусель','карусели','каруселей'])}<br>из ${cars.length} ${plural(cars.length,['текста','текстов','текстов'])}${V>1?' × '+V+' оформлений':''}`;
+    $('wCap').innerHTML=`${plural(jobs.length,['карусель','карусели','каруселей'])}<br>из ${cars.length} ${plural(cars.length,['текста','текстов','текстов'])}${(mixL&&V>1)?' × '+V+' оформлений':''}`;
     if(!building){$('mStatus').textContent=jobs.length?'автомат исправен':'сдайте заказ: текст от агента';$('mBar').style.width='0';}}
 }
 function fly(from,to,bg,dur){if(!from||!to||reduce())return;const a=from.getBoundingClientRect(),b=to.getBoundingClientRect();if(!a.width||!b.width)return;
@@ -1307,7 +1307,7 @@ $('snd').onclick=()=>{snd=!snd;$('snd').textContent='Звук: '+(snd?'вкл':'
 let vK=0,vN=0;
 // ---------- Любимый вид: после сборки можно закрепить один вид и всегда делать в нём
 function favL(){return mixL?null:layout;}
-function setFav(L){if(L){mixL=false;layout=L;ls('km-fav',L.id);}else{mixL=true;ls('km-fav','');}layHint();favBtn();if(results.length)stale();}
+function setFav(L){if(L){mixL=false;layout=L;ls('km-fav',L.id);}else{mixL=true;ls('km-fav','');}layHint();favBtn();refresh();if(results.length)stale();}
 function layHint(){const h=$('layHint');if(!h)return;const L=favL();
   if(L){h.innerHTML=`<b>★ Любимый вид: «${L.name}».</b> Все карусели будут в нём, меняется только цвет. <a href="#" id="favOff">Снова все виды по очереди</a>`;$('favOff').onclick=e=>{e.preventDefault();setFav(null);toast('Виды снова идут по очереди');};}
   else h.innerHTML='Шрифты и расположение текста автомат сам меняет от карусели к карусели, чтобы пачка не выглядела одинаково. Понравился какой-то вид? Открой карусель и нажми «★ Делать все в этом виде».';}
