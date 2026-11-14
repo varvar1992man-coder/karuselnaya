@@ -56,6 +56,7 @@ h2 .r{color:var(--red-text)}
 .formula b{font-size:38px;line-height:1;color:var(--ink)}
 .formula i{font-style:normal;color:var(--red-text);font-size:30px}
 .formula span{font-size:14px;color:var(--muted)}
+@media (max-width:420px){.formula{gap:7px}.formula b{font-size:32px}.formula i{font-size:24px}.formula span{font-size:12px;letter-spacing:.02em}}
 .fan{position:relative;aspect-ratio:1/1;max-width:520px;width:100%;margin:0 auto}
 .fan img{position:absolute;width:46%;height:auto;aspect-ratio:4/5;border-radius:12px;box-shadow:0 14px 30px rgba(33,27,21,.25);left:27%;top:12%;transition:transform .5s}
 .fan img:nth-child(1){transform:rotate(-16deg) translate(-52%,6%)}

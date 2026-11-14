@@ -374,7 +374,7 @@ body{background-image:radial-gradient(color-mix(in srgb,var(--ink) 6%,transparen
     <div class="side">
       <section class="card agent">
         <div class="step"><i>0</i>Пробная карусель</div>
-        <p style="margin:0">Здесь работает всё: любые цвета, все виды оформления, до 7 вариантов на текст, свои фото. Только на каждом слайде водяной знак.</p>
+        <p style="margin:0">Здесь работает всё: любые цвета, все виды оформления, до 13 вариантов на текст, свои фото. Только на каждом слайде водяной знак.</p>
         <p class="hint">Нажми «Вставить пример» в шаге 1 или напиши свои слайды во вкладке «Своими словами». Агенты «Эксперт», «Лайф» и «Бизнес», которые пишут 9 каруселей с хуками под твой блог, и карусели без водяного знака открываются после покупки.</p>
         <div class="row2"><a class="btn primary" href="../#price" style="text-decoration:none;text-align:center">Купить полный доступ</a></div>
         <div hidden><button id="copyAE"></button><button id="copyAL"></button><button id="copyAB"></button><button id="copyA2"></button></div>
@@ -1295,7 +1295,7 @@ function trialMark(ctx){ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent
   ctx.restore();}
 function trialDone(){try{return localStorage.getItem(TRIAL_KEY)==='1';}catch(e){return false;}}
 function trialLock(){const n=document.createElement('div');n.className='notice';n.style.cssText='margin:0 0 12px';
-  n.innerHTML='<p><b>Пробная карусель уже сделана.</b> Понравилось? В полном доступе агенты сами пишут 9 каруселей, до 7 оформлений на каждую и без водяного знака.</p><div class="row2"><a class="btn primary" href="../#price" style="text-decoration:none;text-align:center">Купить полный доступ</a></div>';
+  n.innerHTML='<p><b>Пробная карусель уже сделана.</b> Понравилось? В полном доступе агенты сами пишут 9 каруселей, до 13 оформлений на каждую и без водяного знака.</p><div class="row2"><a class="btn primary" href="../#price" style="text-decoration:none;text-align:center">Купить полный доступ</a></div>';
   const side=document.querySelector('.side');side.insertBefore(n,side.firstChild);$('go').disabled=true;$('go').firstChild.textContent='Проба использована';}
 $('srcClear').onclick=()=>{src.value='';ls('km-src','');refresh();src.focus();};$('srcDemo').onclick=()=>{src.value=EXAMPLE;ls('km-src','');refresh();};
 function closeShow(){if(building)return;$('stage').classList.remove('show');document.documentElement.style.overflow='';$('listhead').scrollIntoView({behavior:reduce()?'auto':'smooth',block:'start'});}
