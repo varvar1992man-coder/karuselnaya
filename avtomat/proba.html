@@ -939,7 +939,7 @@ const GLASS={id:'glass',name:'Стекло',sample:'inter',sw:700,
     const x=60,w=W-120,tw=w-112;const t=fit(ctx,s.title||'',tw,330,76,44,F('inter',700),1.08);ctx.font=F('inter',400)(38);let bl=s.text?wrap(ctx,s.text,tw):[];let bs=38;if(bl.length>5){bs=32;ctx.font=F('inter',400)(bs);bl=wrap(ctx,s.text,tw);}
     const h=110+t.lines.length*t.size*1.08+(bl.length?36+bl.length*bs*1.34:0)+60;const y=p?H-h-70:Math.round((H-h)/2+30);
     const dark=gCard(ctx,st,p,x,y,w,h,idx);gTop(ctx,st,idx,total,p||isDark(st.bg));
-    ctx.font=F('inter',700)(34);ctx.fillStyle=gAcc(st,dark);ctx.fillText(String(idx-1).padStart(2,'0'),x+56,y+80);
+    ctx.font=F('inter',700)(34);ctx.fillStyle=p?'#FFFFFF':gAcc(st,dark);ctx.globalAlpha=p?.8:1;ctx.fillText(String(idx-1).padStart(2,'0'),x+56,y+80);ctx.globalAlpha=1;
     ctx.font=F('inter',700)(t.size);ctx.fillStyle=dark?'#FFFFFF':st.ink;let yy=y+110+t.size*.85;t.lines.forEach((l,i)=>ctx.fillText(l,x+56,yy+i*t.size*1.08));yy+=(t.lines.length-1)*t.size*1.08+36;
     if(bl.length){ctx.font=F('inter',400)(bs);ctx.globalAlpha=.85;bl.forEach((l,i)=>ctx.fillText(l,x+56,yy+bs+i*bs*1.34));ctx.globalAlpha=1;}},
   final(ctx,st,f,idx,total,p){hReset(ctx);gBg(ctx,st,p,7);const x=60,w=W-120,tw=w-112;const c=fit(ctx,f.cta||CTA_DEF,tw,380,80,46,F('inter',700),1.08);
