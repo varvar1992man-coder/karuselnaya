@@ -197,6 +197,7 @@ textarea.ownT{min-height:70px}
 .lay{border:2px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink);cursor:pointer;padding:10px 8px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}
 .lay b{font-size:30px;line-height:1;color:var(--accent-text)}.lay span{font-size:12.5px;font-weight:700;font-family:var(--f-body)}
 .lay:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media (max-width:560px){.zbar{flex-wrap:wrap;gap:8px}.zbar .zt{flex:1 1 100%;min-width:0}.zbar .zt span{display:block}.zbar .zcars{width:100%}.zbar .zbtn{flex:1 1 0;padding:9px 6px}.zcars{flex-wrap:wrap}.zbar .zcars{flex-wrap:nowrap}.zcars .zbtn{flex:1 1 140px;min-width:0}}
 .lay img{width:100%;aspect-ratio:4/5;border-radius:8px;display:block;background:var(--line)}.lay .mixi{width:100%;aspect-ratio:4/5;border-radius:8px;display:grid;grid-template-columns:1fr 1fr;gap:2px;overflow:hidden}.lay .mixi img{border-radius:0;aspect-ratio:auto;height:100%;object-fit:cover}
 #layouts .lay{padding:6px;gap:6px}#layouts .lay span{font-size:11.5px;line-height:1.2}
 .sw:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
@@ -436,13 +437,13 @@ body{background-image:radial-gradient(color-mix(in srgb,var(--ink) 6%,transparen
       </div></div>
       <p class="listhead" id="listhead" hidden>Выданные карусели</p>
       <div class="notice" id="staleNote" hidden><p>Настройки поменялись. Уже выданные карусели остались в старом оформлении.</p><div class="row2"><button type="button" class="btn primary" id="rePil">Выдать заново</button></div></div>
-      <div class="selbar" id="selbar" hidden><span>Отметь «Беру» по одной карусели на каждую тему и забери только их. Выбрано: <b id="selN">0</b></span></div>
+      <div class="selbar" id="selbar" hidden><span>Отметь «Беру» по одной карусели на каждую тему и забери только их. Выбрано: <b id="selN">0</b><br><small style="opacity:.75">Не сохраняется? Открой автомат в Safari или Chrome: внутри Instagram и Telegram сохранение часто не работает. Ещё можно открыть слайд и зажать его пальцем → «Сохранить».</small></span></div>
       <div class="list" id="list"></div>
     </section>
   </div>
 </div>
 <div class="zoom" id="zoom" hidden role="dialog" aria-modal="true" aria-label="Просмотр карусели">
-  <div class="zbar"><div class="zt"><b id="zTitle"></b><span id="zCount"></span></div><div class="zcars"><button class="zbtn" id="zFav" aria-pressed="false">♡ Беру</button><button class="zbtn" id="zClose">Закрыть</button></div></div>
+  <div class="zbar"><div class="zt"><b id="zTitle"></b><span id="zCount"></span></div><div class="zcars"><button class="zbtn" id="zSave">Сохранить</button><button class="zbtn" id="zFav" aria-pressed="false">♡ Беру</button><button class="zbtn" id="zClose">Закрыть</button></div></div>
   <div class="zstage" id="zStage"><button class="zarrow" id="zPrev" aria-label="Назад">‹</button><img id="zoomImg" alt="Слайд крупно"><button class="zarrow" id="zNext" aria-label="Дальше">›</button></div>
   <div class="zdots" id="zDots"></div>
   <div class="zcars"><button class="zbtn" id="zPrevCar">← Прошлая карусель</button><button class="zbtn" id="zNextCar">Следующая карусель →</button></div>
@@ -780,7 +781,7 @@ function hDraw(ctx,st,lines,x,y,lh,size,mark){const sp=ctx.measureText(' ').widt
     ctx.fillStyle=st.ink;words.forEach((it,k)=>ctx.fillText(it.w,pos[k].x,by));
     if(mark==='wave'){let k=0;while(k<words.length){if(!words[k].a){k++;continue;}let e=k;while(e+1<words.length&&words[e+1].a)e++;hWave(ctx,st,pos[k].x,pos[e].x+pos[e].w,by+size*.2,size);k=e+1;}}});}
 function halfLayout(id,name,fam,hw){const hf=F(fam,hw),bf=F('inter',400),LH=fam==='play'?1.12:1.08;
-  return {id,name,sample:fam,sw:hw,
+  return {id,name,sample:fam,sw:hw,odd:true,
     cover(ctx,st,c,p,total){hReset(ctx);hGrid(ctx,st);const ph=Math.round(H*.53);
       if(p){hPhoto(ctx,p,0,0,W,ph,0,.35);}else{ctx.fillStyle=rgba(st.accent,.12);ctx.fillRect(0,0,W,ph);}
       hNick(ctx,st,!!p);hPill(ctx,st,1,total||1,!!p);
@@ -856,7 +857,7 @@ async function build(){
     $('mStatus').textContent=`выдаю ${k+1} из ${jobs.length}`;
     const L=mixL?LAYOUTS[(li+k)%LAYOUTS.length]:layout,st=mixC?STYLES[(si+k)%STYLES.length]:style;PILL=st.pill?st:null;
     const P=photos.length,tot=seq.length,enough=P>=tot;
-    const ph=n=>{if(pi<0)return null;if(n===0)return photos[0].img;if(scope!=='all')return null;if(enough)return photos[n].img;if(P===1||n===tot-1||n%2===1)return null;const q=n/2;return q<P?photos[q].img:null;};
+    const ph=n=>{if(pi<0)return null;if(n===0)return photos[0].img;if(scope!=='all')return null;if(L.odd){if(n===tot-1||n%2===0)return null;const q=(n+1)/2;return q<P?photos[q].img:null;}if(enough)return photos[n].img;if(P===1||n===tot-1||n%2===1)return null;const q=n/2;return q<P?photos[q].img:null;};
     for(let n=0;n<seq.length;n++){const it=seq[n];const ts=performance.now();
       if(it.k==='cover')L.cover(ctx,st,c.cover,ph(0),seq.length);
       else if(it.k==='slide')L.slide(ctx,st,it.s,it.n,n+1,seq.length,ph(n));
@@ -963,7 +964,7 @@ async function saveOne(idx,btn){const r=results[idx];
 $('saveSel').onclick=async()=>{const sel=results.filter(r=>r.sel);if(!sel.length)return;const b=$('saveSel');
   if(canShare()){try{const files=[];sel.forEach(r=>r.blobs.forEach((x,n)=>files.push(new File([x],`${r.name}_slide${n+1}.jpg`,{type:'image/jpeg'}))));await navigator.share({files});}catch(e){}return;}
   b.disabled=true;const t=b.textContent;b.textContent='Упаковываю…';try{await deliver(await zipOf(sel),'karuselnaya_vybrannye.zip');}catch(e){toast('Не получилось собрать архив');}b.textContent=t;b.disabled=false;};
-$('saveAll').onclick=async()=>{if(!results.length)return;const b=$('saveAll');b.disabled=true;const t=b.textContent;b.textContent='Упаковываю…';
+$('saveAll').onclick=async()=>{if(!results.length)return;const b=$('saveAll');if(canShare()){try{const files=[];results.forEach(r=>r.blobs.forEach((x,n)=>files.push(new File([x],`${r.name}_slide${n+1}.jpg`,{type:'image/jpeg'}))));await navigator.share({files});}catch(e){}return;}b.disabled=true;const t=b.textContent;b.textContent='Упаковываю…';
   try{await deliver(await zipOf(results),'karuselnaya.zip');}catch(e){toast('Не получилось собрать архив');}b.textContent=t;b.disabled=false;};
 
 // ---------- UI
@@ -1040,6 +1041,8 @@ function setSrcTab(t){if(t===srcTab)return;srcTab=t;document.querySelectorAll('#
   const ownOn=t==='own';$('ownBox').hidden=!ownOn;$('agentBox').style.display=ownOn?'none':'contents';
   if(ownOn){agentSaved=src.value;renderOwn();src.value=ownText();refresh();}else{src.value=agentSaved;refresh();}}
 document.querySelectorAll('#srcTabs button').forEach(b=>b.onclick=()=>setSrcTab(b.dataset.tab));
+$('zSave').onclick=e=>{if(results[vK])saveOne(vK,e.currentTarget);};
+if(canShare()){$('saveAll').textContent='Сохранить всё в галерею';$('saveAll2').textContent='Сохранить всё в галерею';}
 // ---------- Пробная версия
 const TRIAL_KEY='km-trial-done';
 function trialMark(ctx){ctx.save();ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.globalAlpha=1;ctx.textAlign='center';ctx.textBaseline='middle';
