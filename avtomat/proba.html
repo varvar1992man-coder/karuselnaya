@@ -803,6 +803,104 @@ function halfLayout(id,name,fam,hw){const hf=F(fam,hw),bf=F('inter',400),LH=fam=
         ctx.font=F(fam,hw)(76);const ww=ctx.measureText(f.word).width;rr(ctx,PAD+10,y,ww+64,110,22);ctx.fillStyle=st.accent;ctx.fill();ctx.fillStyle=st.chipInk||'#FFFFFF';ctx.fillText(f.word,PAD+42,y+82);}
       hFoot(ctx,st,false);}};}
 LAYOUTS.push(halfLayout('half','Половинка','inter',800),halfLayout('halfserif','Половинка · Антиква','play',700),halfLayout('halfmont','Половинка · Жирный','mont',800));
+// ---------- «Заметки», «Переписка», «Полароид»
+function tWords(lines){return lines.map(ln=>Array.isArray(ln)?ln:String(ln).split(' ').filter(Boolean).map(w=>({w,a:false})));}
+// Рисует строки слово за словом; слова a=true цветом accentColor. Возвращает {x,y} конца последнего слова.
+function tDraw(ctx,lines,x,y,lh,ink,acc){const sp=ctx.measureText(' ').width;let ex=x,ey=y;
+  tWords(lines).forEach((ws,i)=>{let cx=x;const by=y+i*lh;ws.forEach(it=>{ctx.fillStyle=it.a?acc:ink;ctx.fillText(it.w,cx,by);cx+=ctx.measureText(it.w).width+sp;});ex=cx-sp;ey=by;});return {x:ex,y:ey};}
+function tDate(){const d=new Date(),m=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()} г. в ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
+
+// ===== Заметки
+function nBase(ctx,st){hReset(ctx);ctx.fillStyle=st.bg;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=st.accent;ctx.font=F('inter',400)(76);ctx.fillText('‹',PAD-24,138);ctx.font=F('inter',500)(40);ctx.fillText('Заметки',PAD+22,128);
+  ctx.textAlign='right';ctx.font=F('inter',700)(40);ctx.fillText('Готово',W-PAD,128);ctx.textAlign='left';
+  ctx.font=F('inter',400)(30);ctx.fillStyle=st.ink;ctx.globalAlpha=.45;ctx.textAlign='center';ctx.fillText(tDate(),W/2,214);ctx.textAlign='left';ctx.globalAlpha=1;
+  // нижняя панель: список, камера, ручка, новая заметка
+  const y=H-92;ctx.strokeStyle=st.accent;ctx.fillStyle=st.accent;ctx.lineWidth=5;ctx.lineCap='round';ctx.lineJoin='round';
+  const xs=[W*.16,W*.38,W*.62,W*.84];
+  ctx.beginPath();ctx.arc(xs[0],y,22,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(xs[0]-10,y);ctx.lineTo(xs[0]-2,y+9);ctx.lineTo(xs[0]+12,y-9);ctx.stroke();
+  rr(ctx,xs[1]-30,y-20,60,42,9);ctx.stroke();ctx.beginPath();ctx.arc(xs[1],y+1,11,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(xs[2]-20,y+20);ctx.lineTo(xs[2]+18,y-18);ctx.stroke();ctx.beginPath();ctx.moveTo(xs[2]-24,y+24);ctx.lineTo(xs[2]-16,y+8);ctx.stroke();
+  rr(ctx,xs[3]-24,y-22,44,44,8);ctx.stroke();ctx.beginPath();ctx.moveTo(xs[3]-4,y+4);ctx.lineTo(xs[3]+26,y-26);ctx.stroke();ctx.lineCap='butt';}
+function nCursor(ctx,st,x,y,size){ctx.fillStyle=st.accent;ctx.fillRect(x+8,y-size*.82,5,size*1.02);}
+const NOTES={id:'notes',name:'Заметки',sample:'inter',sw:800,
+  cover(ctx,st,c,p,total){nBase(ctx,st);const tw=W-PAD*2,top=310;const segs=[{t:c.main,c:st.ink,a:false}];if(c.accent)segs.push({t:c.accent,c:st.accent,a:true});
+    const f=fitRich(ctx,segs,tw,p?300:600,p?92:112,50,F('inter',800),1.1);ctx.font=F('inter',800)(f.size);const e=tDraw(ctx,f.lines,PAD,top+f.size*.85,f.size*1.1,st.ink,st.accent);
+    if(p){const py=e.y+70,ph=H-190-py;if(ph>260)hPhoto(ctx,p,PAD,py,tw,ph,30,.35);}else nCursor(ctx,st,e.x,e.y,f.size);},
+  slide(ctx,st,s,n,idx,total,p){nBase(ctx,st);const tw=W-PAD*2;let y=310;
+    const t=fit(ctx,s.title||'',tw,280,p?70:80,44,F('inter',800),1.12);ctx.font=F('inter',800)(t.size);let e=tDraw(ctx,t.lines,PAD,y+t.size*.85,t.size*1.12,st.ink,st.accent);y=e.y+40;
+    if(s.text){const b=fit(ctx,s.text,tw,p?260:520,p?42:50,30,F('inter',400),1.4);ctx.font=F('inter',400)(b.size);e=tDraw(ctx,b.lines,PAD,y+b.size*.95,b.size*1.4,st.ink,st.accent);y=e.y;}
+    if(p){const py=y+60,ph=H-190-py;if(ph>240)hPhoto(ctx,p,PAD,py,tw,ph,30,.35);}else{ctx.font=F('inter',400)(46);nCursor(ctx,st,e.x,e.y,46);}},
+  final(ctx,st,f,idx,total,p){nBase(ctx,st);const tw=W-PAD*2;let y=320;
+    ctx.font=F('inter',600)(30);ctx.fillStyle=st.accent;spaced(ctx,3);ctx.fillText(finTag(f),PAD,y);spaced(ctx,0);y+=60;
+    const c=fit(ctx,f.cta||CTA_DEF,tw,440,96,52,F('inter',800),1.1);ctx.font=F('inter',800)(c.size);let e=tDraw(ctx,c.lines,PAD,y+c.size*.85,c.size*1.1,st.ink,st.accent);y=e.y+90;
+    if(f.word){ctx.font=F('inter',400)(44);ctx.fillStyle=st.ink;ctx.globalAlpha=.8;ctx.fillText('Напиши в комментариях:',PAD,y);ctx.globalAlpha=1;y+=100;
+      ctx.font=F('inter',800)(86);ctx.fillStyle=st.accent;ctx.fillText(f.word,PAD,y);e={x:PAD+ctx.measureText(f.word).width,y};nCursor(ctx,st,e.x,e.y,86);}else nCursor(ctx,st,e.x,e.y,c.size);}};
+
+// ===== Переписка
+function cBase(ctx,st,p){hReset(ctx);ctx.fillStyle=st.bg;ctx.fillRect(0,0,W,H);ctx.fillStyle=rgba(st.ink,.05);ctx.fillRect(0,0,W,190);ctx.fillStyle=rgba(st.ink,.1);ctx.fillRect(0,190,W,2);
+  ctx.fillStyle=st.accent;ctx.font=F('inter',400)(76);ctx.fillText('‹',PAD-30,128);
+  const ax=PAD+80,ay=104,r=48;ctx.save();ctx.beginPath();ctx.arc(ax,ay,r,0,Math.PI*2);ctx.clip();
+  if(p){const s=Math.max(2*r/p.width,2*r/p.height);ctx.drawImage(p,ax-p.width*s/2,ay-p.height*s*.4,p.width*s,p.height*s);}
+  else{ctx.fillStyle=st.accent;ctx.fillRect(ax-r,ay-r,2*r,2*r);ctx.fillStyle=st.chipInk||'#fff';ctx.font=F('inter',700)(44);ctx.textAlign='center';ctx.fillText(((nickText()||'Я').replace('@','')[0]||'Я').toUpperCase(),ax,ay+16);ctx.textAlign='left';}
+  ctx.restore();ctx.fillStyle=st.ink;ctx.font=F('inter',700)(38);ctx.fillText((nickText()||'Я').replace(/^@/,''),ax+70,ay-4,W-ax-70-PAD);
+  ctx.fillStyle=st.accent;ctx.font=F('inter',400)(28);ctx.fillText('в сети',ax+70,ay+38);
+  const by=H-140;rr(ctx,PAD,by,W-PAD*2-120,92,46);ctx.strokeStyle=rgba(st.ink,.18);ctx.lineWidth=3;ctx.stroke();ctx.fillStyle=rgba(st.ink,.4);ctx.font=F('inter',400)(36);ctx.fillText('Сообщение',PAD+40,by+58);
+  ctx.beginPath();ctx.arc(W-PAD-46,by+46,46,0,Math.PI*2);ctx.fillStyle=st.accent;ctx.fill();ctx.strokeStyle=st.chipInk||'#fff';ctx.lineWidth=7;ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.beginPath();ctx.moveTo(W-PAD-46,by+68);ctx.lineTo(W-PAD-46,by+26);ctx.moveTo(W-PAD-64,by+44);ctx.lineTo(W-PAD-46,by+26);ctx.lineTo(W-PAD-28,by+44);ctx.stroke();ctx.lineCap='butt';}
+// Пузырь: side 'l' — собеседник, 'r' — автор. Возвращает высоту.
+function cBubbleSize(ctx,text,size,bold,maxW){ctx.font=F('inter',bold?700:400)(size);const lines=wrap(ctx,text,maxW-80);const w=Math.max(...lines.map(l=>ctx.measureText(l).width))+80;return {lines,w:Math.min(maxW,w),h:lines.length*size*1.3+60-size*.3};}
+function cBubble(ctx,st,b,side,y,size,bold){const x=side==='l'?PAD:W-PAD-b.w;ctx.beginPath();
+  const r=40,rs=10,w=b.w,h=b.h;ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-(side==='r'?rs:r));ctx.arcTo(x+w,y+h,x+w-(side==='r'?rs:r),y+h,side==='r'?rs:r);
+  ctx.lineTo(x+(side==='l'?rs:r),y+h);ctx.arcTo(x,y+h,x,y+h-(side==='l'?rs:r),side==='l'?rs:r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+  ctx.fillStyle=side==='l'?rgba(st.ink,.09):st.accent;ctx.fill();ctx.fillStyle=side==='l'?st.ink:(st.chipInk||'#fff');ctx.font=F('inter',bold?700:400)(size);
+  b.lines.forEach((l,i)=>ctx.fillText(l,x+40,y+30+size*.82+i*size*1.3));}
+// Раскладывает пузыри и фото сверху вниз, подбирая кегль.
+function cStack(ctx,st,items,p){const top=260,bottom=H-190,maxW=W-PAD*2-100;let size=62,laid;
+  for(;size>=32;size-=2){laid=items.map(it=>it.t?{...it,b:cBubbleSize(ctx,it.t,it.big?size+8:size,it.bold,maxW)}:it);
+    const textH=laid.reduce((a,it)=>a+(it.b?it.b.h:0),0)+(laid.length-1)*26;const room=bottom-top-textH;if(room>=(p?380:0))break;}
+  const textH=laid.reduce((a,it)=>a+(it.b?it.b.h:0),0)+(laid.length-1)*26;let ph=p?Math.min(640,bottom-top-textH):0;let y=top;
+  laid.forEach(it=>{if(it.photo){if(p&&ph>200){const w=Math.min(620,ph*.9);hPhoto(ctx,p,W-PAD-w,y,w,ph,40,.35);y+=ph+26;}return;}cBubble(ctx,st,it.b,it.side,y,it.big?size+8:size,it.bold);y+=it.b.h+26;});}
+const CHAT={id:'chat',name:'Переписка',sample:'inter',sw:700,
+  cover(ctx,st,c,p,total){cBase(ctx,st,p);const it=[{t:c.main,side:'l',bold:true,big:true}];if(p)it.push({photo:true});if(c.accent)it.push({t:c.accent,side:'r',bold:true,big:true});cStack(ctx,st,it,p);},
+  slide(ctx,st,s,n,idx,total,p){cBase(ctx,st,null);const it=[];if(s.title)it.push({t:s.title,side:'l',bold:true});if(p)it.push({photo:true});if(s.text)it.push({t:s.text,side:'r',bold:false});cStack(ctx,st,it,p);},
+  final(ctx,st,f,idx,total,p){cBase(ctx,st,null);const it=[{t:f.cta||CTA_DEF,side:'r',bold:true,big:true}];if(f.word){it.push({t:'Напиши в комментариях слово',side:'r',bold:false});it.push({t:f.word,side:'r',bold:true,big:true});}cStack(ctx,st,it,null);}};
+
+// ===== Полароид
+function pTape(ctx,st,x,y,w,ang){ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.fillStyle=rgba(st.accent,.5);ctx.fillRect(-w/2,-26,w,52);ctx.restore();}
+function pFrame(ctx,st,p,cx,cy,w,ang){const h=w*1.2,pad=w*.055;ctx.save();ctx.translate(cx,cy);ctx.rotate(ang);ctx.shadowColor='rgba(0,0,0,0.25)';ctx.shadowBlur=40;ctx.shadowOffsetY=16;
+  ctx.fillStyle='#FCFBF7';ctx.fillRect(-w/2,-h/2,w,h);ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.shadowColor='transparent';
+  const pw=w-pad*2;if(p)hPhoto(ctx,p,-w/2+pad,-h/2+pad,pw,pw,0,.35);else{ctx.fillStyle=rgba(st.accent,.25);ctx.fillRect(-w/2+pad,-h/2+pad,pw,pw);}ctx.restore();
+  pTape(ctx,st,cx+Math.sin(ang)*h/2,cy-Math.cos(ang)*h/2,w*.36,ang-.08);return h;}
+function pNote(ctx,st,x,y,w,h,ang,draw){ctx.save();ctx.translate(x+w/2,y+h/2);ctx.rotate(ang);ctx.shadowColor='rgba(0,0,0,0.18)';ctx.shadowBlur=30;ctx.shadowOffsetY=12;
+  ctx.fillStyle='#FFFDF6';ctx.fillRect(-w/2,-h/2,w,h);ctx.shadowBlur=0;ctx.shadowOffsetY=0;ctx.shadowColor='transparent';ctx.fillStyle=rgba(st.accent,.13);ctx.fillRect(-w/2,-h/2,w,h);
+  ctx.translate(-w/2,-h/2);draw();ctx.restore();pTape(ctx,st,x+w/2,y+4,w*.3,ang-.05);}
+function pBase(ctx,st){hReset(ctx);ctx.fillStyle=st.bg;ctx.fillRect(0,0,W,H);ctx.fillStyle=rgba(st.ink,.05);for(let y=40;y<H;y+=60)for(let x=(y/60%2)*30+30;x<W;x+=60)ctx.fillRect(x,y,3,3);}
+function pNum(ctx,st,idx){ctx.font=F('play',600,true)(52);ctx.fillStyle=st.accent;ctx.fillText('№'+idx,PAD,130);}
+const NOTE_INK='#2A2620';
+function pAcc(st){const h=String(st.accent).replace('#','');const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);if([r,g,b].some(isNaN))return st.accent;const L=(.299*r+.587*g+.114*b)/255;return L>.55?`rgb(${Math.round(r*.45)},${Math.round(g*.45)},${Math.round(b*.45)})`:st.accent;}
+const POLA={id:'polaroid',name:'Полароид',sample:'play',sw:700,
+  cover(ctx,st,c,p,total){pBase(ctx,st);const segs=[{t:c.main,c:st.ink,a:false}];if(c.accent)segs.push({t:c.accent,c:st.accent,a:true});
+    if(p){pFrame(ctx,st,p,W/2+10,470,620,-.06);const f=fitRich(ctx,segs,W-PAD*2,300,88,48,F('play',800),1.12);ctx.font=F('play',800)(f.size);
+      const y0=950+f.size*.85;tDraw(ctx,f.lines,PAD,y0,f.size*1.12,st.ink,st.accent);}
+    else{const x=PAD,y=230,w=W-PAD*2,h=H-430;pNote(ctx,st,x,y,w,h,-.025,()=>{const f=fitRich(ctx,segs.map(s=>({...s,c:s.a?pAcc(st):NOTE_INK})),w-120,h-160,104,52,F('play',800),1.12);
+      ctx.font=F('play',800)(f.size);const bh=f.lines.length*f.size*1.12;tDraw(ctx,f.lines,60,(h-bh)/2+f.size*.85,f.size*1.12,NOTE_INK,pAcc(st));});}
+    ctx.font=F('play',600,true)(40);ctx.fillStyle=st.ink;ctx.globalAlpha=.6;ctx.textAlign='right';ctx.fillText('листай →',W-PAD,H-80);ctx.textAlign='left';ctx.globalAlpha=1;},
+  slide(ctx,st,s,n,idx,total,p){pBase(ctx,st);pNum(ctx,st,idx);
+    if(p){pFrame(ctx,st,p,W-PAD-230,420,440,.07);const tw=W-PAD*2;let y=780;
+      const t=fit(ctx,s.title||'',tw,220,72,42,F('play',800),1.12);ctx.font=F('play',800)(t.size);const e=tDraw(ctx,t.lines,PAD,y+t.size*.85,t.size*1.12,st.ink,st.accent);y=e.y+36;
+      if(s.text){const b=fit(ctx,s.text,tw,H-120-y,44,28,F('inter',400),1.38);ctx.font=F('inter',400)(b.size);ctx.globalAlpha=.85;tDraw(ctx,b.lines,PAD,y+b.size*.95,b.size*1.38,st.ink,st.accent);ctx.globalAlpha=1;}}
+    else{const x=PAD,y=230,w=W-PAD*2,h=H-420;pNote(ctx,st,x,y,w,h,-.02,()=>{const iw=w-120;const t=fit(ctx,s.title||'',iw,h*.45,84,46,F('play',800),1.12);
+      const b=s.text?fit(ctx,s.text,iw,h*.42,48,30,F('inter',400),1.38):{lines:[],size:0};const bh=t.lines.length*t.size*1.12+(b.lines.length?40+b.lines.length*b.size*1.38:0);let yy=(h-bh)/2+t.size*.85;
+      ctx.font=F('play',800)(t.size);const e=tDraw(ctx,t.lines,60,yy,t.size*1.12,NOTE_INK,pAcc(st));if(b.lines.length){ctx.font=F('inter',400)(b.size);ctx.globalAlpha=.85;tDraw(ctx,b.lines,60,e.y+40+b.size*.95,b.size*1.38,NOTE_INK,st.accent);ctx.globalAlpha=1;}});}},
+  final(ctx,st,f,idx,total,p){pBase(ctx,st);pNum(ctx,st,idx);const x=PAD,y=230,w=W-PAD*2,h=H-420;
+    pNote(ctx,st,x,y,w,h,.02,()=>{const iw=w-120;ctx.font=F('inter',600)(30);ctx.fillStyle=pAcc(st);spaced(ctx,3);ctx.fillText(finTag(f),60,110);spaced(ctx,0);
+      const c=fit(ctx,f.cta||CTA_DEF,iw,h*.45,92,50,F('play',800),1.12);ctx.font=F('play',800)(c.size);const e=tDraw(ctx,c.lines,60,190+c.size*.85,c.size*1.12,NOTE_INK,pAcc(st));
+      if(f.word){let yy=e.y+110;ctx.font=F('inter',400)(40);ctx.fillStyle=NOTE_INK;ctx.globalAlpha=.75;ctx.fillText('Напиши в комментариях слово',60,yy);ctx.globalAlpha=1;yy+=40;
+        ctx.save();ctx.translate(60,yy);ctx.rotate(-.04);ctx.font=F('inter',800)(72);const ww=ctx.measureText(f.word).width;ctx.strokeStyle=pAcc(st);ctx.lineWidth=6;rr(ctx,0,0,ww+60,104,14);ctx.stroke();ctx.fillStyle=pAcc(st);ctx.fillText(f.word,30,78);ctx.restore();}});}};
+LAYOUTS.push(NOTES,POLA);
+{const ord=['classic','bold','marker','minimal','half','notes','polaroid','halfserif','halfmont'];LAYOUTS.sort((a,b)=>{const i=ord.indexOf(a.id),j=ord.indexOf(b.id);return (i<0?99:i)-(j<0?99:j);});}
 const FONT_LOADS=['900 100px Inter','800 80px Inter','700 40px Inter','600 30px Inter','500 30px Inter','400 50px Inter','800 80px Unbounded','700 60px Unbounded',
  '900 80px Montserrat','800 60px Montserrat','600 30px Montserrat','500 40px Montserrat','800 80px "Playfair Display"','700 60px "Playfair Display"','italic 600 40px "Playfair Display"',
  '600 80px "Cormorant Garamond"','500 50px "Cormorant Garamond"','700 80px "Cormorant Garamond"','900 80px Rubik','700 60px Rubik','500 30px Rubik','400 40px Rubik'];
