@@ -997,14 +997,14 @@ function rcHead(ctx,st,x,w,y,idx,total){const ink='#1d1d1d';ctx.fillStyle=ink;ct
 function rcBar(ctx,x,y,w,h){let cx=x,i=0;ctx.fillStyle='#1d1d1d';while(cx<x+w){const bw=[3,6,3,9,4,3,6][i%7];if(i%2===0)ctx.fillRect(cx,y,bw,h);cx+=bw+3;i++;}}
 const RECEIPT={id:'receipt',name:'Чек',sample:'mono',sw:700,
   cover(ctx,st,c,p,total){rcBg(ctx,st);const x=120,w=W-240,y=70,h=H-140;rcPaper(ctx,st,x,y,w,h);rcHead(ctx,st,x,w,y+90,1,total||1);let yy=y+210;
-    if(p){hPhoto(ctx,p,x+50,yy,w-100,430,0,.32);ctx.save();ctx.globalCompositeOperation='saturation';ctx.fillStyle='#808080';ctx.fillRect(x+50,yy,w-100,430);ctx.restore();yy+=480;}
+    if(p){hPhoto(ctx,p,x+50,yy,w-100,430,0,.32);yy+=480;}
     const f=fitRich(ctx,segsOf(c,'#1d1d1d'),w-100,p?300:560,p?64:80,38,MONOB,1.12);ctx.font=MONOB(f.size);const up=f.lines.map(l=>l.map(it=>({w:it.w.toUpperCase(),a:it.a})));if(pale(st.accent)){const sp=ctx.measureText(' ').width;up.forEach((ln,i)=>{let cx=x+50;ln.forEach(it=>{const ww=ctx.measureText(it.w).width;if(it.a){ctx.fillStyle=rgba(st.accent,.8);ctx.fillRect(cx-6,yy+i*f.size*1.12-f.size*.1,ww+12+sp*.6,f.size*1.04);}cx+=ww+sp;});});rDraw(ctx,up,x+50,yy+f.size*.8,f.size*1.12,'#1d1d1d','#1d1d1d');}else rDraw(ctx,up,x+50,yy+f.size*.8,f.size*1.12,'#1d1d1d',rcAcc(st));yy+=f.lines.length*f.size*1.12+20;
     rcDash(ctx,x+50,x+w-50,Math.min(yy+10,y+h-190));ctx.font=MONO(30);ctx.fillStyle='#1d1d1d';ctx.fillText('ПОЗИЦИЙ:',x+50,y+h-130);ctx.textAlign='right';ctx.fillText(`${(total||2)-2}  ЛИСТАЙ →`,x+w-50,y+h-130);ctx.textAlign='left';rcBar(ctx,x+50,y+h-90,w-100,40);},
   slide(ctx,st,s,n,idx,total,p){rcBg(ctx,st);const x=120,w=W-240,y=70,h=H-140;rcPaper(ctx,st,x,y,w,h);rcHead(ctx,st,x,w,y+90,idx,total);let yy=y+(p?230:300);const tw=w-100;
     ctx.font=MONOB(34);ctx.fillStyle=rcAcc(st);ctx.fillText(`ПОЗИЦИЯ ${String(idx-1).padStart(2,'0')}`,x+50,yy);yy+=40;
     const t=fit(ctx,(s.title||'').toUpperCase(),tw,p?300:420,p?62:76,36,MONOB,1.14);ctx.font=MONOB(t.size);ctx.fillStyle='#1d1d1d';t.lines.forEach((l,i)=>ctx.fillText(l,x+50,yy+t.size*.9+i*t.size*1.14));yy+=t.size*.9+(t.lines.length-1)*t.size*1.14+46;
     if(s.text){let bs=p?34:42;ctx.font=MONO(bs);let bl=wrap(ctx,s.text,tw);if(bl.length>6){bs=30;ctx.font=MONO(bs);bl=wrap(ctx,s.text,tw);}ctx.fillStyle='#333';bl.forEach((l,i)=>ctx.fillText(l,x+50,yy+bs+i*bs*1.4));yy+=bs+(bl.length-1)*bs*1.4+40;}
-    if(p){const ph=Math.min(380,y+h-200-yy);if(ph>200){hPhoto(ctx,p,x+50,yy,tw,ph,0,.35);ctx.save();ctx.globalCompositeOperation='saturation';ctx.fillStyle='#808080';ctx.fillRect(x+50,yy,tw,ph);ctx.restore();}}
+    if(p){const ph=Math.min(380,y+h-200-yy);if(ph>200){hPhoto(ctx,p,x+50,yy,tw,ph,0,.35);}}
     rcDash(ctx,x+50,x+w-50,y+h-170);ctx.font=MONO(30);ctx.fillStyle='#1d1d1d';ctx.fillText('ЦЕНА',x+50,y+h-110);ctx.textAlign='right';ctx.fillText('БЕСЦЕННО',x+w-50,y+h-110);ctx.textAlign='left';},
   final(ctx,st,f,idx,total,p){rcBg(ctx,st);const x=120,w=W-240,y=70,h=H-140;rcPaper(ctx,st,x,y,w,h);rcHead(ctx,st,x,w,y+90,idx,total);let yy=y+240;const tw=w-100;
     ctx.font=MONOB(44);ctx.fillStyle='#1d1d1d';ctx.fillText('ИТОГО',x+50,yy);ctx.textAlign='right';ctx.fillText(`${total-2} ПОЗ.`,x+w-50,yy);ctx.textAlign='left';rcDash(ctx,x+50,x+w-50,yy+40);yy+=110;
