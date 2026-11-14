@@ -626,7 +626,7 @@ function mFoot(ctx,st,p){const ink=p?'#FFFFFF':st.ink;ctx.strokeStyle=st.accent;
 const CTA_DEF='Подпишись, чтобы не пропустить новые разборы';
 
 const LAYOUTS=[
- {id:'classic',name:'Классика',sample:'inter',sw:900,
+ {id:'classic',full:true,name:'Классика',sample:'inter',sw:900,
   cover(ctx,st,c,p){base(ctx,st,p);const hf=F('inter',900);
     if(!p){ctx.fillStyle=st.soft;ctx.globalAlpha=.55;ctx.beginPath();ctx.arc(W-90,250,300,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}
     const LH=PILL?1.22:1.02,mw=TW(p)-(PILL?16:0);const f=fitRich(ctx,segsOf(c,st),mw,1170-340,p?118:132,62,hf,LH);
@@ -644,7 +644,7 @@ const LAYOUTS=[
       const wf=F('inter',900);ctx.font=wf(88);const w=f.word.toUpperCase();const ww=Math.min(ctx.measureText(w).width+80,W-PAD*2);rr(ctx,PAD,y,ww,132,26);ctx.fillStyle=st.accent;ctx.fill();ctx.fillStyle=st.chipInk;ctx.fillText(w,PAD+40,y+98,W-PAD*2-80);}
     foot(ctx,st,idx,total,F('inter',500));}},
 
- {id:'bold',name:'Акцент',sample:'unb',sw:800,
+ {id:'bold',full:true,name:'Акцент',sample:'unb',sw:800,
   cover(ctx,st,c,p){base(ctx,st,p);const hf=F('unb',800);
     ctx.font=F('inter',700)(32);ctx.fillStyle=st.accent;spaced(ctx,5);ctx.fillText(nickText().toUpperCase(),PAD,150);spaced(ctx,0);
     const LH=PILL?1.3:1.12;const f=fitRich(ctx,segsOf(c,st,true),TW(p)-(PILL?16:0),700,104,50,hf,LH);ctx.font=hf(f.size);drawRich(ctx,f.lines,PAD+(PILL?8:0),290+f.size*.9,f.size*LH,f.size,st,PILL?'pill':'plain');
@@ -662,7 +662,7 @@ const LAYOUTS=[
       const wf=F('unb',800);ctx.font=wf(76);const w=f.word.toUpperCase();const ww=Math.min(ctx.measureText(w).width+80,W-PAD*2);rr(ctx,PAD,y,ww,128,10);ctx.lineWidth=6;ctx.strokeStyle=st.accent;ctx.stroke();ctx.fillStyle=st.accent;ctx.fillText(w,PAD+40,y+92,W-PAD*2-80);}
     foot(ctx,st,idx,total,F('inter',600));}},
 
- {id:'marker',name:'Маркер',sample:'mont',sw:900,
+ {id:'marker',full:true,name:'Маркер',sample:'mont',sw:900,
   cover(ctx,st,c,p){base(ctx,st,p);const hf=F('mont',900);tag(ctx,st,nickText().toUpperCase(),PAD,128,F('mont',600));
     const f=fitRich(ctx,segsOf(c,st),TW(p)-30,1130-360,100,52,hf,1.32);const y0=Math.max(380,1130-f.lines.length*f.size*1.32);ctx.font=hf(f.size);drawRich(ctx,f.lines,PAD+14,y0+f.size*.9,f.size*1.32,f.size,st,'bars');
     ctx.beginPath();ctx.arc(W-PAD-50,H-110,50,0,Math.PI*2);ctx.fillStyle=st.accent;ctx.fill();ctx.fillStyle=st.chipInk;ctx.font=F('mont',800)(50);ctx.textAlign='center';ctx.fillText('→',W-PAD-50,H-93);ctx.textAlign='left';
@@ -732,7 +732,7 @@ const LAYOUTS=[
     if(f.word){ctx.font=F('rubik',500)(40);ctx.fillStyle=st.ink;ctx.globalAlpha=.85;ctx.fillText('Напиши в комментариях слово',PAD,y,tw);ctx.globalAlpha=1;y+=50;
       const w=f.word.toUpperCase();rr(ctx,PAD,y,tw,150,75);ctx.fillStyle=st.ink;ctx.fill();ctx.fillStyle=st.bg;ctx.font=F('rubik',900)(80);ctx.textAlign='center';ctx.fillText(w,PAD+tw/2,y+103,tw-60);ctx.textAlign='left';}
     foot(ctx,st,idx,total,F('rubik',500));}},
- {id:'minimal',name:'Минимал',sample:'inter',sw:800,
+ {id:'minimal',full:true,name:'Минимал',sample:'inter',sw:800,
   cover(ctx,st,c,p){mBase(ctx,st,p,true);const ink=p?'#FFFFFF':st.ink,hf=F('inter',800),LH=1.1;
     const segs=[{t:c.main,c:ink,a:false}];if(c.accent)segs.push({t:c.accent,c:st.accent,a:true});
     const f=fitRich(ctx,segs,W-PAD*2,p?440:600,p?96:104,56,hf,LH);const subS=40,gap=34,bottom=H-200;
@@ -912,7 +912,7 @@ function isDark(hex){const h=hex.replace('#','');const n=parseInt(h,16);const r=
 function mix(a,b,t){const pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16);const c=(s)=>Math.round(((pa>>s)&255)*(1-t)+((pb>>s)&255)*t);return '#'+[16,8,0].map(s=>c(s).toString(16).padStart(2,'0')).join('');}
 // рисует rich-строки; слова a=true цветом acc
 function rDraw(ctx,lines,x,y,lh,ink,acc){const sp=ctx.measureText(' ').width;lines.forEach((ln,i)=>{let cx=x;(Array.isArray(ln)?ln:String(ln).split(' ').map(w=>({w,a:false}))).forEach(it=>{ctx.fillStyle=it.a?acc:ink;ctx.fillText(it.w,cx,y+i*lh);cx+=ctx.measureText(it.w).width+sp;});});}
-function segsOf(c,ink){const s=[{t:c.main||'',c:ink,a:false}];if(c.accent)s.push({t:c.accent,c:ink,a:true});return s;}
+function nSegs(c,ink){const s=[{t:c.main||'',c:ink,a:false}];if(c.accent)s.push({t:c.accent,c:ink,a:true});return s;}
 
 // ===== Стекло: фото или цветной градиент под матовой стеклянной карточкой
 function gBlur(src,w,h,k){const t=document.createElement('canvas');t.width=Math.max(8,Math.round(w/k));t.height=Math.max(8,Math.round(h/k));const c=t.getContext('2d');c.imageSmoothingQuality='high';
@@ -930,9 +930,9 @@ function gCard(ctx,st,p,x,y,w,h,seed){ctx.save();rr(ctx,x,y,w,h,44);ctx.clip();
 function gTop(ctx,st,idx,total,light){const ink=light?'#FFFFFF':st.ink;const n=nickText();ctx.font=F('inter',600)(30);ctx.fillStyle=ink;ctx.globalAlpha=.9;if(n)ctx.fillText(n,PAD,100);
   const t=`${idx}/${total}`;ctx.font=F('inter',600)(30);const tw=ctx.measureText(t).width;rr(ctx,W-PAD-tw-44,58,tw+44,60,30);ctx.fillStyle=light?'rgba(255,255,255,0.22)':rgba(st.ink,.1);ctx.fill();ctx.fillStyle=ink;ctx.fillText(t,W-PAD-tw-22,99);ctx.globalAlpha=1;}
 function gAcc(st,dark){return dark?(lum(st.accent)<170?mix(st.accent,'#FFFFFF',.5):st.accent):(pale(st.accent)?mix(st.accent,'#000000',.45):st.accent);}
-const GLASS={id:'glass',name:'Стекло',sample:'inter',sw:700,
+const GLASS={id:'glass',full:true,name:'Стекло',sample:'inter',sw:700,
   cover(ctx,st,c,p,total){hReset(ctx);gBg(ctx,st,p,0);if(p){const g=ctx.createLinearGradient(0,H*.45,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,0.35)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
-    const x=60,w=W-120;ctx.font=F('inter',700)(80);const f=fitRich(ctx,segsOf(c,'#fff'),w-112,420,92,52,F('inter',700),1.06);const h=f.lines.length*f.size*1.06+210,y=H-h-70;
+    const x=60,w=W-120;ctx.font=F('inter',700)(80);const f=fitRich(ctx,nSegs(c,'#fff'),w-112,420,92,52,F('inter',700),1.06);const h=f.lines.length*f.size*1.06+210,y=H-h-70;
     const dark=gCard(ctx,st,p,x,y,w,h,0);gTop(ctx,st,1,total||1,p||isDark(st.bg));ctx.font=F('inter',700)(f.size);rDraw(ctx,f.lines,x+56,y+70+f.size*.85,f.size*1.06,dark?'#FFFFFF':st.ink,gAcc(st,dark));
     ctx.font=F('inter',500)(30);ctx.fillStyle=dark?'#FFFFFF':st.ink;ctx.globalAlpha=.75;ctx.fillText('Листай  →',x+56,y+h-50);ctx.globalAlpha=1;},
   slide(ctx,st,s,n,idx,total,p){hReset(ctx);gBg(ctx,st,p,idx);if(p){ctx.fillStyle='rgba(0,0,0,0.12)';ctx.fillRect(0,0,W,H);}
@@ -967,7 +967,7 @@ function thBase(ctx,st){hReset(ctx);ctx.fillStyle=st.bg;ctx.fillRect(0,0,W,H);}
 function thThread(ctx,st,x,y0,y1){ctx.strokeStyle=rgba(st.ink,.18);ctx.lineWidth=5;ctx.lineCap='round';ln2(ctx,x,y0,x,y1);ctx.lineCap='butt';}
 const THREAD={id:'thread',name:'Тред',sample:'inter',sw:600,
   cover(ctx,st,c,p,total){thBase(ctx,st);const x=PAD-20,sz=96,y=p?120:300;thHead(ctx,st,p,x,y,sz);const tx=x,tw=W-tx-PAD+20;
-    const f=fitRich(ctx,segsOf(c,st.ink),tw,p?300:520,p?66:84,44,F('inter',600),1.18);ctx.font=F('inter',600)(f.size);let yy=y+sz+70+f.size*.8;rDraw(ctx,f.lines,tx,yy,f.size*1.18,st.ink,st.accent);yy+=(f.lines.length-1)*f.size*1.18+50;
+    const f=fitRich(ctx,nSegs(c,st.ink),tw,p?300:520,p?66:84,44,F('inter',600),1.18);ctx.font=F('inter',600)(f.size);let yy=y+sz+70+f.size*.8;rDraw(ctx,f.lines,tx,yy,f.size*1.18,st.ink,st.accent);yy+=(f.lines.length-1)*f.size*1.18+50;
     if(p){const ph=H-yy-190;if(ph>260){hPhoto(ctx,p,tx,yy,tw,ph,36,.35);rr(ctx,tx,yy,tw,ph,36);ctx.strokeStyle=rgba(st.ink,.12);ctx.lineWidth=2;ctx.stroke();yy+=ph+70;}}else yy+=40;
     thIcons(ctx,st,tx,Math.min(yy,H-110),1);ctx.font=F('inter',500)(30);ctx.fillStyle=st.ink;ctx.globalAlpha=.45;ctx.textAlign='right';ctx.fillText(`1/${total||1}  →`,W-PAD,H-60);ctx.textAlign='left';ctx.globalAlpha=1;},
   slide(ctx,st,s,n,idx,total,p){thBase(ctx,st);const x=PAD-20,sz=84;const y=p?190:300;thThread(ctx,st,x+sz/2,0,y-20);thHead(ctx,st,null,x,y,sz,`${idx}/${total}`);
@@ -998,7 +998,7 @@ function rcBar(ctx,x,y,w,h){let cx=x,i=0;ctx.fillStyle='#1d1d1d';while(cx<x+w){c
 const RECEIPT={id:'receipt',name:'Чек',sample:'mono',sw:700,
   cover(ctx,st,c,p,total){rcBg(ctx,st);const x=120,w=W-240,y=70,h=H-140;rcPaper(ctx,st,x,y,w,h);rcHead(ctx,st,x,w,y+90,1,total||1);let yy=y+210;
     if(p){hPhoto(ctx,p,x+50,yy,w-100,430,0,.32);yy+=480;}
-    const f=fitRich(ctx,segsOf(c,'#1d1d1d'),w-100,p?300:560,p?64:80,38,MONOB,1.12);ctx.font=MONOB(f.size);const up=f.lines.map(l=>l.map(it=>({w:it.w.toUpperCase(),a:it.a})));if(pale(st.accent)){const sp=ctx.measureText(' ').width;up.forEach((ln,i)=>{let cx=x+50;ln.forEach(it=>{const ww=ctx.measureText(it.w).width;if(it.a){ctx.fillStyle=rgba(st.accent,.8);ctx.fillRect(cx-6,yy+i*f.size*1.12-f.size*.1,ww+12+sp*.6,f.size*1.04);}cx+=ww+sp;});});rDraw(ctx,up,x+50,yy+f.size*.8,f.size*1.12,'#1d1d1d','#1d1d1d');}else rDraw(ctx,up,x+50,yy+f.size*.8,f.size*1.12,'#1d1d1d',rcAcc(st));yy+=f.lines.length*f.size*1.12+20;
+    const f=fitRich(ctx,nSegs(c,'#1d1d1d'),w-100,p?300:560,p?64:80,38,MONOB,1.12);ctx.font=MONOB(f.size);const up=f.lines.map(l=>l.map(it=>({w:it.w.toUpperCase(),a:it.a})));if(pale(st.accent)){const sp=ctx.measureText(' ').width;up.forEach((ln,i)=>{let cx=x+50;ln.forEach(it=>{const ww=ctx.measureText(it.w).width;if(it.a){ctx.fillStyle=rgba(st.accent,.8);ctx.fillRect(cx-6,yy+i*f.size*1.12-f.size*.1,ww+12+sp*.6,f.size*1.04);}cx+=ww+sp;});});rDraw(ctx,up,x+50,yy+f.size*.8,f.size*1.12,'#1d1d1d','#1d1d1d');}else rDraw(ctx,up,x+50,yy+f.size*.8,f.size*1.12,'#1d1d1d',rcAcc(st));yy+=f.lines.length*f.size*1.12+20;
     rcDash(ctx,x+50,x+w-50,Math.min(yy+10,y+h-190));ctx.font=MONO(30);ctx.fillStyle='#1d1d1d';ctx.fillText('ПОЗИЦИЙ:',x+50,y+h-130);ctx.textAlign='right';ctx.fillText(`${(total||2)-2}  ЛИСТАЙ →`,x+w-50,y+h-130);ctx.textAlign='left';rcBar(ctx,x+50,y+h-90,w-100,40);},
   slide(ctx,st,s,n,idx,total,p){rcBg(ctx,st);const x=120,w=W-240,y=70,h=H-140;rcPaper(ctx,st,x,y,w,h);rcHead(ctx,st,x,w,y+90,idx,total);let yy=y+(p?230:300);const tw=w-100;
     ctx.font=MONOB(34);ctx.fillStyle=rcAcc(st);ctx.fillText(`ПОЗИЦИЯ ${String(idx-1).padStart(2,'0')}`,x+50,yy);yy+=40;
@@ -1026,7 +1026,7 @@ function wBtn(ctx,st,x,y,t,primary){ctx.font=F('mont',800)(34);const w=ctx.measu
 const WINDOW={id:'window',name:'Окно',sample:'mont',sw:800,
   cover(ctx,st,c,p,total){wBg(ctx,st);wTop(ctx,st,1,total||1);const ink=wInk(st);
     if(p){wWin(ctx,st,PAD+150,150,W-PAD*2-150,560,'фото_01.jpg');hPhoto(ctx,p,PAD+155,224,W-PAD*2-160,481,0,.33);}
-    const wy=p?640:300,ww=W-PAD*2-60;ctx.font=F('mont',900)(80);const f=fitRich(ctx,segsOf(c,ink),ww-80,p?340:560,p?76:92,46,F('mont',900),1.08);const wh=f.lines.length*f.size*1.08+190;
+    const wy=p?640:300,ww=W-PAD*2-60;ctx.font=F('mont',900)(80);const f=fitRich(ctx,nSegs(c,ink),ww-80,p?340:560,p?76:92,46,F('mont',900),1.08);const wh=f.lines.length*f.size*1.08+190;
     wWin(ctx,st,PAD-20,wy,ww,wh,'важно.txt');ctx.font=F('mont',900)(f.size);rDraw(ctx,f.lines,PAD+20,wy+120+f.size*.8,f.size*1.08,ink,isDark(st.bg)?st.accent:(pale(st.accent)?mix(st.accent,'#000',.45):st.accent));
     wBtn(ctx,st,W-PAD-260,Math.min(wy+wh+50,H-140),'Далее →',true);},
   slide(ctx,st,s,n,idx,total,p){wBg(ctx,st);wTop(ctx,st,idx,total);const ink=wInk(st);const x=PAD-20,w=W-PAD*2+20,tw=w-80;
@@ -1098,7 +1098,7 @@ async function build(){
     $('mStatus').textContent=`выдаю ${k+1} из ${jobs.length}`;
     const L=mixL?LAYOUTS[(li+k)%LAYOUTS.length]:layout,st=mixC?STYLES[(si+k)%STYLES.length]:style;PILL=st.pill?st:null;
     const P=photos.length,tot=seq.length,enough=P>=tot;
-    const ph=n=>{if(pi<0)return null;if(n===0)return photos[0].img;if(scope!=='all')return null;if(L.odd){if(n===tot-1||n%2===0)return null;const q=(n+1)/2;return q<P?photos[q].img:null;}if(enough)return photos[n].img;if(P===1||n===tot-1||n%2===1)return null;const q=n/2;return q<P?photos[q].img:null;};
+    const ph=n=>{if(pi<0)return null;if(n===0)return photos[0].img;if(scope!=='all')return null;if(L.odd){if(n===tot-1||n%2===0)return null;const q=(n+1)/2;return q<P?photos[q].img:null;}if(L.full||enough)return n<P?photos[n].img:null;if(P===1||n===tot-1||n%2===1)return null;const q=n/2;return q<P?photos[q].img:null;};
     for(let n=0;n<seq.length;n++){const it=seq[n];const ts=performance.now();
       if(it.k==='cover')L.cover(ctx,st,c.cover,ph(0),seq.length);
       else if(it.k==='slide')L.slide(ctx,st,it.s,it.n,n+1,seq.length,ph(n));
