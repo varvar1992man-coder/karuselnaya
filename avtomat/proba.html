@@ -379,7 +379,7 @@ body{background-image:radial-gradient(color-mix(in srgb,var(--ink) 6%,transparen
         <p style="margin:0">Здесь работает всё: любые цвета, все виды оформления, до 13 вариантов на текст, свои фото. Только на каждом слайде водяной знак.</p>
         <p class="hint">Нажми «Вставить пример» в шаге 1 или напиши свои слайды во вкладке «Своими словами». Агенты «Эксперт», «Лайф», «Бизнес» и «Сторителлинг», которые пишут карусели с хуками под твой блог, и карусели без водяного знака открываются после покупки.</p>
         <div class="row2"><a class="btn primary" href="../#price" style="text-decoration:none;text-align:center">Купить полный доступ</a></div>
-        <div hidden><button id="copyAE"></button><button id="copyAL"></button><button id="copyAB"></button><button id="copyAS"></button><button id="copyA2"></button></div>
+        <div hidden><button id="copyAE"></button><button id="copyAL"></button><button id="copyAB"></button><button id="copyAS"></button><button id="copyA2"></button><button id="copyA3"></button></div>
       </section>
       <section class="card">
         <div class="step"><i>1</i>Текст <small id="parsed">0 каруселей</small></div>
@@ -525,6 +525,7 @@ const EXAMPLE=`Карусель 1
 function agentText(){return '';}function storyText(){return '';}
 const AGENT_TEXTS=agentText('expert');
 const AGENT_CAPTIONS='';
+const AGENT_ANALYST='';
 
 const STYLES=[
  {id:'sov',name:'Советская',bg:'#F3E7CF',ink:'#231A12',accent:'#C8241E',chipInk:'#FFF7EA',soft:'#E7CFA5'},
@@ -1368,7 +1369,7 @@ function closeShow(){if(building)return;$('stage').classList.remove('show');docu
 $('closeShow').onclick=closeShow;$('saveAll2').onclick=()=>$('saveAll').click();
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('stage').classList.contains('show')&&$('zoom').hidden)closeShow();});
 $('addMore').onclick=()=>$('files').click();$('keepAlt').onclick=()=>{altOk=true;refresh();};
-$('copyAE').onclick=e=>copyText(agentText('expert'),e.currentTarget);$('copyAL').onclick=e=>copyText(agentText('life'),e.currentTarget);$('copyAB').onclick=e=>copyText(agentText('biz'),e.currentTarget);$('copyAS').onclick=e=>copyText(storyText(),e.currentTarget);$('copyA2').onclick=e=>copyText(AGENT_CAPTIONS,e.currentTarget);
+$('copyAE').onclick=e=>copyText(agentText('expert'),e.currentTarget);$('copyAL').onclick=e=>copyText(agentText('life'),e.currentTarget);$('copyAB').onclick=e=>copyText(agentText('biz'),e.currentTarget);$('copyAS').onclick=e=>copyText(storyText(),e.currentTarget);$('copyA2').onclick=e=>copyText(AGENT_CAPTIONS,e.currentTarget);$('copyA3').onclick=e=>copyText(AGENT_ANALYST,e.currentTarget);
 $('snd').onclick=()=>{snd=!snd;$('snd').textContent='Звук: '+(snd?'вкл':'выкл');$('snd').setAttribute('aria-pressed',snd);};
 let vK=0,vN=0;
 // ---------- Любимый вид: после сборки можно закрепить один вид и всегда делать в нём
