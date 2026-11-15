@@ -280,6 +280,7 @@ ol.ownPrev{margin:4px 0 0;padding-left:20px;font-size:13px;line-height:1.4;displ
 .stage.show .wallcap b{font-size:clamp(48px,7vw,72px)}
 .stagedone{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:4px}
 .stagedone .btn{padding:12px 18px;font-size:15px}
+.stagedone .hint{flex-basis:100%;text-align:center;margin:0}
 .feed{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
 .box{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:10px;min-width:0}
 .box h4{margin:0 0 8px;font-size:13px;font-weight:800;display:flex;justify-content:space-between;gap:6px}
@@ -440,12 +441,13 @@ body{background-image:radial-gradient(color-mix(in srgb,var(--ink) 6%,transparen
         <div class="arrows" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l6 6 6-6M6 12l6 6 6-6"/></svg></div>
         <div class="wall" id="wall"></div>
         <div class="wallcap"><b id="wN">0</b><span id="wCap">каруселей<br>выдаст автомат</span></div>
-        <div class="stagedone" id="stageDone" hidden><button type="button" class="btn primary" id="saveAll2">Забрать всё архивом</button><button type="button" class="btn" id="closeShow">Смотреть карусели</button></div>
+        <div class="stagedone" id="stageDone" hidden><button type="button" class="btn primary" id="saveAll2">Забрать всё архивом</button><button type="button" class="btn" id="closeShow">Смотреть карусели</button><button type="button" class="btn primary" id="nextPart" hidden></button><p class="hint" id="nextHint" hidden></p></div>
       </div></div>
       <p class="listhead" id="listhead" hidden>Выданные карусели</p>
       <div class="notice" id="staleNote" hidden><p>Настройки поменялись. Уже выданные карусели остались в старом оформлении.</p><div class="row2"><button type="button" class="btn primary" id="rePil">Выдать заново</button></div></div>
       <div class="selbar" id="selbar" hidden><span>Отметь «Беру» по одной карусели на каждую тему и забери только их. Выбрано: <b id="selN">0</b><br><small style="opacity:.75">Не сохраняется? Открой автомат в Safari или Chrome: внутри Instagram и Telegram сохранение часто не работает. Ещё можно открыть слайд и зажать его пальцем → «Сохранить».</small></span></div>
       <div class="list" id="list"></div>
+      <div class="notice" id="nextBox" hidden><p id="nextBoxText"></p><div class="row2"><button type="button" class="btn primary" id="nextPart2"></button></div></div>
     </section>
   </div>
 </div>
@@ -1079,16 +1081,19 @@ function plural(n,f){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return f[2];i
 
 const PHONE=matchMedia('(pointer:coarse)').matches&&Math.min(screen.width,screen.height)<820;
 const WEAK=PHONE&&((navigator.deviceMemory&&navigator.deviceMemory<=3)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4));
-const SLIDE_LIMIT=WEAK?120:PHONE?220:1200;let heavyOk=false,partCap=0;
+const SLIDE_LIMIT=WEAK?240:PHONE?320:1200,PHONE_MAX=PHONE?30:1e9;let heavyOk=false,partCap=0,partFrom=0,partAll=0;
 async function build(){
   if(building)return;let {jobs}=plan();const err=$('err');
   const tot=jobs.reduce((a,j)=>a+j.c.slides.length+2,0);
-  if(tot>SLIDE_LIMIT&&!heavyOk){let n=0,acc=0;for(const j of jobs){acc+=j.c.slides.length+2;if(acc>SLIDE_LIMIT)break;n++;}partCap=Math.max(1,n);
-    $('heavyText').textContent=`Это ${tot} ${plural(tot,['слайд','слайда','слайдов'])} за раз. На телефоне такая пачка может подвиснуть. Можно выдать первые ${partCap} ${plural(partCap,['карусель','карусели','каруселей'])}, а остальные следующей пачкой.`;
-    $('heavyPart').textContent='Выдать первые '+partCap;$('heavyNote').hidden=false;$('heavyNote').scrollIntoView({block:'nearest'});return;}
-  $('heavyNote').hidden=true;const PART=heavyOk==='part';if(PART)jobs=jobs.slice(0,partCap);heavyOk=false;
+  const ALL=jobs.length;
+  if(!heavyOk&&(tot>SLIDE_LIMIT||ALL>PHONE_MAX)){let n=0,acc=0;for(const j of jobs){acc+=j.c.slides.length+2;if(acc>SLIDE_LIMIT||n>=PHONE_MAX)break;n++;}partCap=Math.max(1,n);partFrom=0;partAll=ALL;
+    const pc=`${partCap} ${plural(partCap,['карусель','карусели','каруселей'])}`;
+    $('heavyText').textContent=PHONE?`Это ${ALL} ${plural(ALL,['карусель','карусели','каруселей'])}. Больше ${pc} за раз телефон не выдерживает: браузер перезагружает страницу, и всё пропадает. Выдам пачками по ${partCap}: сохраняешь пачку и жмёшь «Следующие».`
+      :`Это ${tot} ${plural(tot,['слайд','слайда','слайдов'])} за раз. Такая пачка может подвиснуть. Можно выдать первые ${pc}, а остальные следующей пачкой.`;
+    $('heavyAll').hidden=PHONE;$('heavyPart').textContent='Выдать первые '+partCap;$('heavyNote').hidden=false;$('heavyNote').scrollIntoView({block:'nearest'});return;}
+  $('heavyNote').hidden=true;const PART=heavyOk==='part';if(PART){partAll=ALL;jobs=jobs.slice(partFrom,partFrom+partCap);}else partFrom=0;heavyOk=false;
   if(!jobs.length){err.hidden=false;err.textContent='Не нашла ни одной карусели. Проверь, что текст начинается со строки «Карусель 1», а дальше идут «Обложка:», «Слайд:» и «Финал:».';return;}
-  err.hidden=true;$('staleNote').hidden=true;renderStage(true,PART?partCap:0);building=true;$('go').disabled=true;$('saveAll').disabled=true;$('listhead').hidden=true;
+  err.hidden=true;$('staleNote').hidden=true;renderStage(true,PART?partCap:0,PART?partFrom:0);$('nextPart').hidden=true;$('nextHint').hidden=true;$('nextBox').hidden=true;building=true;$('go').disabled=true;$('saveAll').disabled=true;$('listhead').hidden=true;
   const M=$('machine');$('stageDone').hidden=true;$('stage').classList.add('show');$('stage').scrollTop=0;document.documentElement.style.overflow='hidden';
   M.classList.add('on');$('mStatus').textContent='включаю автомат…';AC();await new Promise(r=>setTimeout(r,450));
   results.forEach(r=>r.urls.forEach(u=>URL.revokeObjectURL(u)));results=[];
@@ -1101,7 +1106,7 @@ async function build(){
     const {c,i,pi,j}=jobs[k];const seq=slidesFor(c);const blobs=[],urls=[];const t0=performance.now();
     fly(document.querySelector(`#chips .chip[data-i="${i}"]`),M,null,480);if(pi>=0&&pi<10)fly(document.querySelector(`#phs div[data-i="${pi}"]`),M,photos[pi].url,480);swish();
     $('mStatus').textContent=`выдаю ${k+1} из ${jobs.length}`;
-    const L=mixL?LAYOUTS[(li+k)%LAYOUTS.length]:layout,st=mixC?STYLES[(si+k)%STYLES.length]:style;PILL=st.pill?st:null;
+    const kk=k+(PART?partFrom:0),L=mixL?LAYOUTS[(li+kk)%LAYOUTS.length]:layout,st=mixC?STYLES[(si+kk)%STYLES.length]:style;PILL=st.pill?st:null;
     const P=photos.length,tot=seq.length,enough=P>=tot;
     const ph=n=>{if(pi<0)return null;if(n===0)return photos[0].img;if(scope!=='all')return null;if(L.odd){if(n===tot-1||n%2===0)return null;const q=(n+1)/2;return q<P?photos[q].img:null;}if(L.full||enough)return n<P?photos[n].img:null;if(P===1||n===tot-1||n%2===1)return null;const q=n/2;return q<P?photos[q].img:null;};
     for(let n=0;n<seq.length;n++){const it=seq[n];const ts=performance.now();
@@ -1120,6 +1125,9 @@ async function build(){
   }
   await new Promise(r=>setTimeout(r,reduce()?50:950));
   building=false;$('go').disabled=false;$('saveAll').disabled=false;M.classList.remove('on');$('listhead').hidden=false;$('selbar').hidden=false;updateSel();
+  if(PART&&partFrom+partCap<partAll){const a=partFrom+partCap+1,b=Math.min(partAll,partFrom+2*partCap),t=`Следующие ${b-a+1}: с ${a} по ${b} из ${partAll}`;
+    $('nextPart').textContent=t;$('nextPart2').textContent=t;$('nextPart').hidden=false;$('nextHint').hidden=false;
+    $('nextHint').textContent='Сначала сохрани нужные из этой пачки: следующая её заменит.';$('nextBoxText').textContent=`Выдано ${partFrom+1}–${partFrom+results.length} из ${partAll}. Сохрани нужные, потом бери следующую пачку: она заменит эту.`;$('nextBox').hidden=false;}
   if(!$('trialBuy')){const a=document.createElement('a');a.id='trialBuy';a.className='btn primary';a.href='../#price';a.style.textDecoration='none';a.textContent='Убрать водяной знак: купить доступ';$('stageDone').prepend(a);}
   $('stageDone').hidden=false;$('stageDone').scrollIntoView({behavior:reduce()?'auto':'smooth',block:'end'});
   $('mStatus').textContent=`выдано ✓ ${results.length} ${plural(results.length,['карусель','карусели','каруселей'])}`;chimeDone();
@@ -1138,7 +1146,7 @@ function updateSel(){const n=results.filter(r=>r.sel).length;$('selN').textConte
 // ---------- stage (the filmable machine view)
 const MAXROWS=60;
 const reduce=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
-function renderStage(force,cap){let {cars,jobs}=plan();if(cap)jobs=jobs.slice(0,cap);
+function renderStage(force,cap,from){let {cars,jobs}=plan();if(cap)jobs=jobs.slice(from||0,(from||0)+cap);
   $('sT').textContent=cars.length;$('sP').textContent=photos.length;
   const ch=$('chips');ch.innerHTML='';cars.forEach((c,i)=>{const d=document.createElement('div');d.className='chip';d.dataset.i=i;d.textContent=(c.cover.main+' '+(c.cover.accent||'')).trim();ch.appendChild(d);});
   const ph=$('phs');ph.innerHTML='';
@@ -1249,8 +1257,8 @@ nick.addEventListener('input',()=>ls('km-nick',nick.value));
 function gradLabel(){const v=+$('grad').value;$('gradVal').textContent=v<65?'слабый, фото видно лучше':v<90?'средний':'сильный, текст читается лучше';}
 $('grad').addEventListener('input',()=>{stale();GRAD=$('grad').value/100;ls('km-grad',$('grad').value);gradLabel();});
 {const gv=ls('km-grad');if(gv){$('grad').value=gv;GRAD=gv/100;}gradLabel();}
-$('go').onclick=build;
-$('heavyPart').onclick=()=>{heavyOk='part';build();};$('heavyAll').onclick=()=>{heavyOk=true;build();};
+$('go').onclick=()=>{partFrom=0;build();};
+$('heavyPart').onclick=()=>{partFrom=0;heavyOk='part';build();};{const nx=()=>{partFrom+=partCap;heavyOk='part';build();};$('nextPart').onclick=nx;$('nextPart2').onclick=nx;}$('heavyAll').onclick=()=>{heavyOk=true;build();};
 if(/Instagram|FBAN|FBAV|FB_IAB|Line\/|VKClient|; wv\)/i.test(navigator.userAgent))$('inapp').hidden=false;
 $('copyLink').onclick=e=>copyText(location.href,e.currentTarget);
 function stale(){if(results.length&&!building)$('staleNote').hidden=false;}
