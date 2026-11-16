@@ -773,6 +773,8 @@ function hGrid(ctx,st){ctx.fillStyle=st.bg;ctx.fillRect(0,0,W,H);ctx.strokeStyle
   for(let x=54;x<W;x+=54)ln2(ctx,x,0,x,H);for(let y=54;y<H;y+=54)ln2(ctx,0,y,W,y);}
 function hReset(ctx){ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.textBaseline='alphabetic';ctx.textAlign='left';spaced(ctx,0);ctx.globalAlpha=1;}
 function hPhoto(ctx,p,x,y,w,h,r,ay){ctx.save();if(r){rr(ctx,x,y,w,h,r);ctx.clip();}else{ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();}
+  if(p&&p.src0){const o=p.src0,ow=o.naturalWidth||o.width,oh=o.naturalHeight||o.height;ctx.imageSmoothingQuality='high';ctx.drawImage(p.bgT,x-w*.05,y-h*.05,w*1.1,h*1.1);ctx.fillStyle='rgba(0,0,0,.22)';ctx.fillRect(x,y,w,h);
+    const m=Math.min(w,h)*.06,k=Math.min((w-2*m)/ow,(h-2*m)/oh),dw=ow*k,dh=oh*k;ctx.save();ctx.shadowColor='rgba(0,0,0,.3)';ctx.shadowBlur=24;ctx.shadowOffsetY=8;ctx.fillStyle='#fff';ctx.fillRect(x+(w-dw)/2,y+(h-dh)/2,dw,dh);ctx.restore();ctx.drawImage(o,x+(w-dw)/2,y+(h-dh)/2,dw,dh);ctx.restore();return;}
   const s=Math.max(w/p.width,h/p.height),dw=p.width*s,dh=p.height*s;ctx.drawImage(p,x+(w-dw)/2,y+(h-dh)*(ay==null?.4:ay),dw,dh);ctx.restore();}
 function hPill(ctx,st,idx,total,onPhoto){const t=`${idx}/${total}`;ctx.font=F('inter',500)(34);const tw=ctx.measureText(t).width,w=tw+48,h=64,x=W-PAD-w,y=46;
   rr(ctx,x,y,w,h,h/2);ctx.fillStyle=onPhoto?'rgba(0,0,0,0.38)':rgba(st.ink,.55);ctx.fill();ctx.fillStyle='#FFFFFF';ctx.fillText(t,x+24,y+44);}
@@ -1245,8 +1247,17 @@ function setToggle(id,v){$(id).setAttribute('aria-pressed',v);}
 $('mixC').onclick=()=>{mixC=!mixC;setToggle('mixC',mixC);$('mixC').textContent='Разные цвета: '+(mixC?'вкл':'выкл');stale();};
 $('files').onchange=async e=>{let fs=[...e.target.files];const mx=parse(src.value).reduce((m,c)=>Math.max(m,c.slides.length+2),0);
   if(mx&&photos.length+fs.length>mx){const room=Math.max(0,mx-photos.length);toast(room?`Слайдов ${mx}, поэтому взяла только ${room} ${plural(room,['фото','фото','фото'])}`:`Уже ${mx} фото, по одному на каждый слайд. Больше не нужно`);fs=fs.slice(0,room);}
-  for(const f of fs){try{const url=URL.createObjectURL(f);const img=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=url;});photos.push({url,img});}catch(_){}}
+  for(const f of fs){try{const url=URL.createObjectURL(f);const img=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=url;});photos.push({url,img:fitOdd(img)});}catch(_){}}
   e.target.value='';altOk=false;renderThumbs();refresh();};
+// Длинные скрины и широкие кадры не обрезаем: кладём целиком на размытую подложку из самой картинки.
+function fitOdd(im){const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;if(!w||!h)return im;const r=h/w;if(r<=1.6&&r>=0.7)return im;
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';
+  const t=document.createElement('canvas');t.width=27;t.height=34;const tx=t.getContext('2d');const s0=Math.max(27/w,34/h);tx.drawImage(im,(27-w*s0)/2,(34-h*s0)/2,w*s0,h*s0);
+  x.drawImage(t,-40,-40,W+80,H+80);x.fillStyle='rgba(0,0,0,.22)';x.fillRect(0,0,W,H);
+  const mx=W*.07,my=H*.055,s=Math.min((W-2*mx)/w,(H-2*my)/h),dw=w*s,dh=h*s,dx=(W-dw)/2,dy=(H-dh)/2,rr=Math.min(34,dw*.05);
+  const rp=()=>{x.beginPath();x.moveTo(dx+rr,dy);x.arcTo(dx+dw,dy,dx+dw,dy+dh,rr);x.arcTo(dx+dw,dy+dh,dx,dy+dh,rr);x.arcTo(dx,dy+dh,dx,dy,rr);x.arcTo(dx,dy,dx+dw,dy,rr);x.closePath();};
+  x.save();x.shadowColor='rgba(0,0,0,.35)';x.shadowBlur=40;x.shadowOffsetY=14;rp();x.fillStyle='#fff';x.fill();x.restore();
+  x.save();rp();x.clip();x.drawImage(im,dx,dy,dw,dh);x.restore();c.src0=im;c.bgT=t;return c;}
 function renderThumbs(){const t=$('thumbs');t.innerHTML='';photos.forEach((p,i)=>{const d=document.createElement('div');d.style.backgroundImage=`url(${p.url})`;
   const x=document.createElement('button');x.type='button';x.textContent='×';x.setAttribute('aria-label','Убрать фото');x.onclick=()=>{URL.revokeObjectURL(p.url);photos.splice(i,1);renderThumbs();refresh();};d.appendChild(x);t.appendChild(d);});}
 document.querySelectorAll('#scopeBox button').forEach(b=>b.onclick=()=>{scope=b.dataset.scope;document.querySelectorAll('#scopeBox button').forEach(x=>x.setAttribute('aria-pressed',x===b));refresh();});
