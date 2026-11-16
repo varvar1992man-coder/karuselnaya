@@ -1304,8 +1304,29 @@ function ctaOf(lines,fword){let cta='',word=String(fword||'').replace(/[^\p{L}\p
     cta=noDot(c);
     if(!word){const q=c.match(/[«"“]([^»"”]{2,20})[»"”]/)||c.match(/слово\s+([A-ZА-ЯЁ0-9]{2,20})(?!\p{L})/u)||c.match(/(?<!\p{L})([A-ZА-ЯЁ]{3,20})(?!\p{L})/u);if(q)word=q[1].replace(/\s+/g,'').toUpperCase();}}
   return {cta,word};}
+const SWIPE_RE=/^[(\[]?\s*(листай|свайп\w*|листайте)\s*[→>➡️\-–—.!]*\s*[)\]]?$/i;
+function joinLines(a){return a.map((l,i)=>{if(i===a.length-1)return endP(l);if(/[.!?…→)]$/.test(l)||/[—–,:;\-]$/.test(l))return l;if(/[»"”]$/.test(l))return /^[«"“]/.test(a[i+1])?l+',':l;return wc(l)<=5?l+',':l+'.';}).join(' ');}
+const cap=t=>t?t.charAt(0).toUpperCase()+t.slice(1):t;
+// Текст, разбитый пустыми строками на абзацы: абзац = слайд, первая строка абзаца = заголовок.
+function splitBlocks(txt,fword){let blocks=txt.split(/\n\s*\n/).map(b=>b.split('\n').map(x=>x.trim()).filter(l=>l&&!SWIPE_RE.test(l))).filter(b=>b.length);
+  if(!blocks.length)return null;let cta='',word=String(fword||'').replace(/[^\p{L}\p{N}]/gu,'').toUpperCase();
+  const lb=blocks[blocks.length-1],ci=lb.findIndex(l=>CTA_RE.test(l));
+  if(blocks.length>1&&ci>=0){const c=lb.slice(ci).join(' ').replace(/\s+/g,' ').trim();cta=noDot(c);lb.splice(ci);if(!lb.length)blocks.pop();
+    if(!word){const q=c.match(/[«"“]([^»"”]{2,20})[»"”]/)||c.match(/слово\s+([A-ZА-ЯЁ0-9]{2,20})(?!\p{L})/u)||c.match(/(?<!\p{L})([A-ZА-ЯЁ]{3,20})(?!\p{L})/u);if(q)word=q[1].replace(/\s+/g,'').toUpperCase();}}
+  const b0=blocks[0];let cover;const fs=sents(b0[0]);
+  if(wc(b0[0])>14&&fs.length>1){cover=coverSplit(fs.shift());b0[0]=fs.join(' ');}else{cover=coverSplit(b0.shift());if(!b0.length)blocks.shift();}
+  const slides=[];
+  for(const b of blocks){const all=b.join(' ');
+    if(wc(all)>48){const ss=sents(all);let cur=[];for(const x of ss){cur.push(x);if(wc(cur.join(' '))>=26){slides.push(slideOf(cur));cur=[];}}if(cur.length){if(wc(cur.join(' '))<8&&slides.length){const l=slides[slides.length-1];l.x=(l.x+' '+cur.join(' ')).trim();}else slides.push(slideOf(cur));}continue;}
+    let t=b[0],rest=b.slice(1);
+    if(wc(t)>11){const sl=slideOf(sents(t));t=sl.t;if(sl.x)rest=[sl.x,...rest];}
+    t=noDot(t).replace(/[:—–\-]\s*$/,'').trim();
+    slides.push({t,x:cap(joinLines(rest))});}
+  if(slides.length>18){const k=slides.slice(17);slides.splice(17);slides.push({t:k[0].t,x:k.map((z,i)=>(i?endP(z.t)+' ':'')+z.x).join(' ').trim()});}
+  return {cm:cover.cm,ca:cover.ca,slides,cta,word};}
 function splitFull(raw,fword){const txt=String(raw||'').replace(/\r/g,'').trim();if(!txt)return null;
   let lines=txt.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  if(/\n\s*\n/.test(txt)&&lines.filter((l,k)=>k>0&&HDR_RE.test(l)).length<2){const r=splitBlocks(txt,fword);if(r&&r.slides.length)return r;}
   const hi=lines.map((l,k)=>k>0&&isHdr(l)?k:-1).filter(k=>k>0);
   if(hi.length>=2){ // текст с подзаголовками: «Факт №1», «Шаг 2», «3.» — заголовок + строки под ним = слайд
     const {cta,word}=ctaOf(lines,fword);
@@ -1314,7 +1335,7 @@ function splitFull(raw,fword){const txt=String(raw||'').replace(/\r/g,'').trim()
     else{cover=coverSplit(lines[0]);if(pre.length)slides.push(slideOf(sents(pre.join(' '))));}
     hi.forEach((h,k)=>{const body=lines.slice(h+1,k+1<hi.length?hi[k+1]:lines.length);slides.push({t:noDot(lines[h]).replace(/:$/,''),x:body.map(endP).join(' ')});});
     return {cm:cover.cm,ca:cover.ca,slides:slides.slice(0,18),cta,word};}
-  let paras=lines.map((l,k)=>k>0?l.replace(/^(\d+|[•\-–—*])[.)]?\s+(?=\S)/,''):l);
+  let paras=lines.map((l,k)=>k>0?l.replace(/^(\d+[.)]|[•\-–—*])\s+(?=\S)/,''):l);
   const first=sents(paras[0]);const cover=coverSplit(first.shift()||paras[0]);paras[0]=first.join(' ');paras=paras.filter(Boolean);
   const {cta,word}=ctaOf(paras,fword);
   let all=paras.map(sents).filter(a=>a.length);
