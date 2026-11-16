@@ -1110,7 +1110,7 @@ async function build(){
     $('mStatus').textContent=`выдаю ${k+1} из ${jobs.length}`;
     const kk=k+(PART?partFrom:0),L=mixL?LAYOUTS[(li+kk)%LAYOUTS.length]:layout,st=mixC?STYLES[(si+kk)%STYLES.length]:style;PILL=st.pill?st:null;
     const P=photos.length,tot=seq.length,enough=P>=tot;
-    const ph=n=>{if(pi<0)return null;if(n===0)return photos[0].img;if(scope!=='all')return null;if(L.odd){if(n===tot-1||n%2===0)return null;const q=(n+1)/2;return q<P?photos[q].img:null;}if(L.full||enough)return n<P?photos[n].img:null;if(P===1||n===tot-1||n%2===1)return null;const q=n/2;return q<P?photos[q].img:null;};
+    const ph=n=>{if(pi<0)return null;if(n===0)return photos[0].raw||photos[0].img;if(scope!=='all')return null;if(L.odd){if(n===tot-1||n%2===0)return null;const q=(n+1)/2;return q<P?photos[q].img:null;}if(L.full||enough)return n<P?photos[n].img:null;if(P===1||n===tot-1||n%2===1)return null;const q=n/2;return q<P?photos[q].img:null;};
     for(let n=0;n<seq.length;n++){const it=seq[n];const ts=performance.now();
       if(it.k==='cover')L.cover(ctx,st,c.cover,ph(0),seq.length);
       else if(it.k==='slide')L.slide(ctx,st,it.s,it.n,n+1,seq.length,ph(n));
@@ -1235,7 +1235,7 @@ let fakeP=null;function fakePhoto(){if(fakeP)return fakeP;const c=document.creat
 const layPrev={};let layTimer=0;
 function layThumb(L){const key=L.id+'|'+style.id+'|'+(photos[0]?photos[0].url:'')+'|'+nickText();if(layPrev[L.id]&&layPrev[L.id].key===key)return layPrev[L.id].url;
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');PILL=style.pill?style:null;
-  try{L.cover(ctx,style,{main:'Как я веду блог',accent:'с нейросетью'},photos[0]?photos[0].img:fakePhoto(),6);}catch(e){}
+  try{L.cover(ctx,style,{main:'Как я веду блог',accent:'с нейросетью'},photos[0]?(photos[0].raw||photos[0].img):fakePhoto(),6);}catch(e){}
   const sm=document.createElement('canvas');sm.width=216;sm.height=270;sm.getContext('2d').drawImage(cv,0,0,216,270);const url=sm.toDataURL('image/jpeg',.7);layPrev[L.id]={key,url};return url;}
 function renderLayouts(){clearTimeout(layTimer);layTimer=setTimeout(drawLayouts,60);}
 function drawLayouts(){const box=$('layouts');if(!box)return;box.innerHTML='';
@@ -1247,7 +1247,7 @@ function setToggle(id,v){$(id).setAttribute('aria-pressed',v);}
 $('mixC').onclick=()=>{mixC=!mixC;setToggle('mixC',mixC);$('mixC').textContent='Разные цвета: '+(mixC?'вкл':'выкл');stale();};
 $('files').onchange=async e=>{let fs=[...e.target.files];const mx=parse(src.value).reduce((m,c)=>Math.max(m,c.slides.length+2),0);
   if(mx&&photos.length+fs.length>mx){const room=Math.max(0,mx-photos.length);toast(room?`Слайдов ${mx}, поэтому взяла только ${room} ${plural(room,['фото','фото','фото'])}`:`Уже ${mx} фото, по одному на каждый слайд. Больше не нужно`);fs=fs.slice(0,room);}
-  for(const f of fs){try{const url=URL.createObjectURL(f);const img=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=url;});photos.push({url,img:fitOdd(img)});}catch(_){}}
+  for(const f of fs){try{const url=URL.createObjectURL(f);const img=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=url;});photos.push({url,img:fitOdd(img),raw:img});}catch(_){}}
   e.target.value='';altOk=false;renderThumbs();refresh();};
 // Длинные скрины и широкие кадры не обрезаем: кладём целиком на размытую подложку из самой картинки.
 function fitOdd(im){const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;if(!w||!h)return im;const r=h/w;if(r<=1.6&&r>=0.7)return im;
