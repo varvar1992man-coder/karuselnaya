@@ -210,7 +210,7 @@ ol.ownPrev{margin:4px 0 0;padding-left:20px;font-size:13px;line-height:1.4;displ
 .drop{border:2px dashed var(--line);border-radius:14px;padding:14px;text-align:center;color:var(--muted);cursor:pointer;display:block;font-size:14px}
 .drop:hover{border-color:var(--accent);color:var(--ink)}
 .thumbs{display:flex;gap:6px;flex-wrap:wrap}
-.thumbs div{width:46px;height:58px;border-radius:8px;background-size:cover;background-position:center;position:relative}
+.thumbs .th{display:flex;flex-direction:column;gap:4px;width:74px}.thumbs .ti{width:74px;height:92px;border-radius:8px;background-size:cover;background-position:center;position:relative;outline:2px solid transparent;outline-offset:1px}.thumbs .pinned .ti{outline-color:var(--accent)}.thumbs select{width:74px;font:inherit;font-size:11px;padding:3px 2px;border-radius:7px;border:1px solid var(--line,#d9cdb8);background:var(--panel,#fff);color:var(--ink)}
 .thumbs button{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:var(--ink);color:var(--panel);font-size:12px;line-height:1;cursor:pointer;padding:0}
 .mode{display:flex;gap:6px;flex-wrap:wrap}
 .mode button{flex:1 1 140px;font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:10px;padding:8px;cursor:pointer}
@@ -411,7 +411,7 @@ body{background-image:radial-gradient(color-mix(in srgb,var(--ink) 6%,transparen
           <button type="button" data-scope="all" aria-pressed="true">Фото на всех слайдах</button>
           <button type="button" data-scope="cover" aria-pressed="false">Только на обложке</button>
         </div>
-        <p class="hint" style="margin-top:4px">Фото идут по порядку: 1‑е на обложке, 2‑е на втором слайде и так далее.</p>
+        <p class="hint" id="phHint" style="margin-top:4px">Фото идут по порядку: 1‑е на обложке, 2‑е на втором слайде и так далее. Под каждым фото можно выбрать, на какой слайд его поставить.</p>
         <div class="mode" id="modeBox">
           <button type="button" data-v="1" aria-pressed="true">1 вариант на текст</button>
           <button type="button" data-v="3" aria-pressed="false">3 варианта</button>
@@ -1066,7 +1066,7 @@ function plan(){const cars=parse(src.value);let jobs=[];
   return {cars,jobs:jobs.slice(0,MAXC)};}
 function refresh(){renderStage();if(typeof renderLayouts==='function'&&$('layouts'))renderLayouts();const {cars,jobs}=plan();
   const maxS=cars.reduce((m,c)=>Math.max(m,c.slides.length+2),0),nP=photos.length;
-  const over=maxS>0&&nP>maxS,need=scope==='all'&&nP>0&&nP<maxS;$('photoNote').hidden=over?false:(!need||altOk);
+  const over=maxS>0&&nP>maxS,need=scope==='all'&&nP>0&&nP<maxS&&!photos.some(p=>p.slot);$('photoNote').hidden=over?false:(!need||altOk);
   $('addMore').hidden=over;$('keepAlt').hidden=over;$('trimExtra').hidden=!over;
   if(over)$('photoNoteText').textContent=`В каруселях ${maxS} ${plural(maxS,['слайд','слайда','слайдов'])}, а фото ${nP}. Лишние ${nP-maxS} не войдут в карусели.`;
   if(need&&nP===1)$('photoNoteText').textContent=`Фото одно, поэтому оно встанет только на обложку, а остальные слайды будут цветом стиля. Добавь ещё фото, если хочешь их и внутри карусели.`;
@@ -1110,7 +1110,8 @@ async function build(){
     $('mStatus').textContent=`выдаю ${k+1} из ${jobs.length}`;
     const kk=k+(PART?partFrom:0),L=mixL?LAYOUTS[(li+kk)%LAYOUTS.length]:layout,st=mixC?STYLES[(si+kk)%STYLES.length]:style;PILL=st.pill?st:null;
     const P=photos.length,tot=seq.length,enough=P>=tot;
-    const ph=n=>{if(pi<0)return null;if(n===0)return photos[0].raw||photos[0].img;if(scope!=='all')return null;if(L.odd){if(n===tot-1||n%2===0)return null;const q=(n+1)/2;return q<P?photos[q].img:null;}if(L.full||enough)return n<P?photos[n].img:null;if(P===1||n===tot-1||n%2===1)return null;const q=n/2;return q<P?photos[q].img:null;};
+    const pinMap=photos.some(p=>p.slot)?pinSlots(tot):null;
+    const ph=n=>{if(pi<0)return null;if(pinMap){if(scope!=='all'&&n>0)return null;const p=pinMap[n];return p?(n===0?p.raw||p.img:p.img):null;}if(n===0)return photos[0].raw||photos[0].img;if(scope!=='all')return null;if(L.odd){if(n===tot-1||n%2===0)return null;const q=(n+1)/2;return q<P?photos[q].img:null;}if(L.full||enough)return n<P?photos[n].img:null;if(P===1||n===tot-1||n%2===1)return null;const q=n/2;return q<P?photos[q].img:null;};
     for(let n=0;n<seq.length;n++){const it=seq[n];const ts=performance.now();
       if(it.k==='cover')L.cover(ctx,st,c.cover,ph(0),seq.length);
       else if(it.k==='slide')L.slide(ctx,st,it.s,it.n,n+1,seq.length,ph(n));
@@ -1258,8 +1259,20 @@ function fitOdd(im){const w=im.naturalWidth||im.width,h=im.naturalHeight||im.hei
   const rp=()=>{x.beginPath();x.moveTo(dx+rr,dy);x.arcTo(dx+dw,dy,dx+dw,dy+dh,rr);x.arcTo(dx+dw,dy+dh,dx,dy+dh,rr);x.arcTo(dx,dy+dh,dx,dy,rr);x.arcTo(dx,dy,dx+dw,dy,rr);x.closePath();};
   x.save();x.shadowColor='rgba(0,0,0,.35)';x.shadowBlur=40;x.shadowOffsetY=14;rp();x.fillStyle='#fff';x.fill();x.restore();
   x.save();rp();x.clip();x.drawImage(im,dx,dy,dw,dh);x.restore();c.src0=im;c.bgT=t;return c;}
-function renderThumbs(){const t=$('thumbs');t.innerHTML='';photos.forEach((p,i)=>{const d=document.createElement('div');d.style.backgroundImage=`url(${p.url})`;
-  const x=document.createElement('button');x.type='button';x.textContent='×';x.setAttribute('aria-label','Убрать фото');x.onclick=()=>{URL.revokeObjectURL(p.url);photos.splice(i,1);renderThumbs();refresh();};d.appendChild(x);t.appendChild(d);});}
+// Фото, закреплённые за слайдами: 'c' — обложка, 'f' — финал, число — номер слайда (обложка = 1). Остальные («Авто») заполняют свободные слайды по порядку.
+function pinSlots(tot){const m={};photos.forEach(p=>{if(!p.slot)return;const n=p.slot==='c'?0:p.slot==='f'?tot-1:(+p.slot)-1;if(n>=0&&n<tot&&!m[n])m[n]=p;});
+  let n=0;photos.forEach(p=>{if(p.slot)return;while(n<tot-1&&m[n])n++;if(n<tot-1){m[n]=p;n++;}});return m;}
+function slotMax(){const mx=parse(src.value).reduce((m,c)=>Math.max(m,c.slides.length+2),0);return Math.max(mx,3);}
+function renderThumbs(){const t=$('thumbs');t.innerHTML='';const mx=slotMax();
+  photos.forEach((p,i)=>{const w=document.createElement('div');w.className='th';const d=document.createElement('div');d.className='ti';d.style.backgroundImage=`url(${p.url})`;
+  const x=document.createElement('button');x.type='button';x.textContent='×';x.setAttribute('aria-label','Убрать фото');x.onclick=()=>{URL.revokeObjectURL(p.url);photos.splice(i,1);renderThumbs();refresh();stale();};d.appendChild(x);w.appendChild(d);
+  const sel=document.createElement('select');sel.setAttribute('aria-label','На какой слайд это фото');
+  const opts=[['','Авто'],['c','Обложка']];for(let k=2;k<mx;k++)opts.push([String(k),'Слайд '+k]);opts.push(['f','Финал']);
+  if(p.slot&&!opts.some(o=>o[0]===p.slot))opts.push([p.slot,'Слайд '+p.slot]);
+  opts.forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;if((p.slot||'')===v)o.selected=true;sel.appendChild(o);});
+  sel.onchange=()=>{const v=sel.value;if(v)photos.forEach(q=>{if(q!==p&&q.slot===v)q.slot='';});p.slot=v;renderThumbs();refresh();stale();};
+  if(p.slot)w.classList.add('pinned');w.appendChild(sel);t.appendChild(w);});
+  const h=$('phHint');if(h)h.textContent=photos.some(p=>p.slot)?'Закреплённые фото встанут на выбранные слайды, фото на «Авто» заполнят свободные слайды по порядку.':'Фото идут по порядку: 1‑е на обложке, 2‑е на втором слайде и так далее. Под каждым фото можно выбрать, на какой слайд его поставить.';}
 document.querySelectorAll('#scopeBox button').forEach(b=>b.onclick=()=>{scope=b.dataset.scope;document.querySelectorAll('#scopeBox button').forEach(x=>x.setAttribute('aria-pressed',x===b));refresh();});
 document.querySelectorAll('#modeBox button').forEach(b=>b.onclick=()=>{V=+b.dataset.v;document.querySelectorAll('#modeBox button').forEach(x=>x.setAttribute('aria-pressed',x===b));refresh();});
 $('trimExtra').onclick=()=>{const mx=parse(src.value).reduce((m,c)=>Math.max(m,c.slides.length+2),0);photos.splice(mx).forEach(p=>URL.revokeObjectURL(p.url));renderThumbs();refresh();};
@@ -1357,7 +1370,9 @@ function ownText(){if(own.mode==='text'){const r=splitFull(own.full,own.fword);i
   own.slides.forEach(sl=>{const t=oc(sl.t),x=oc(sl.x);if(t||x)L.push('Слайд: '+t+' | '+x);});
   const cta=oc(own.cta),w=oc(own.word).replace(/\s+/g,'').toUpperCase();if(cta||w)L.push('Финал: '+(cta||'Напиши в комментариях слово')+(w?' | '+w:''));
   return L.join('\n');}
-function ownSync(){ls('km-own',JSON.stringify(own));src.value=ownText();refresh();}
+function ownSync(){ls('km-own',JSON.stringify(own));src.value=ownText();refresh();thumbSoon();}
+let thT=0;function thumbSoon(){if(!photos.length)return;clearTimeout(thT);thT=setTimeout(()=>{if(!document.activeElement||document.activeElement.tagName!=='SELECT')renderThumbs();},400);}
+src.addEventListener('input',thumbSoon);
 function ownField(tag,ph,val,on,cls){const el=document.createElement(tag);if(tag==='input')el.type='text';el.placeholder=ph;el.value=val||'';if(cls)el.className=cls;el.spellcheck=true;el.addEventListener('input',()=>{on(el.value);ownSync();});return el;}
 function renderOwn(){const box=$('ownBox');box.innerHTML='';
   const top=document.createElement('div');top.className='mode';
