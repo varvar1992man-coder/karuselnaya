@@ -1462,6 +1462,34 @@ function imgCut(img){if(!img)return null;if(img._cut!==undefined)return img._cut
     for(let yy=0;yy<c.height;yy++)for(let xx=0;xx<c.width;xx++){const a=d[(yy*c.width+xx)*4+3];if(a<40)tr++;else{if(xx<x0)x0=xx;if(yy<y0)y0=yy;if(xx>x1)x1=xx;if(yy>y1)y1=yy;}}
     if(tr>c.width*c.height*.08&&x1>x0)res={x:x0/k,y:y0/k,w:(x1-x0+1)/k,h:(y1-y0+1)/k};}catch(e){}
   img._cut=res;return res;}
+function imgKey(img){// ровный фон (стена) становится прозрачным, чтобы шар оставался стеклянным; пёстрый фон не трогаем
+  if(!img)return null;if(img._key!==undefined)return img._key;let res=null;
+  try{const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,k=Math.min(1,900/Math.max(iw,ih)),w=Math.round(iw*k),h=Math.round(ih*k);
+    const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.drawImage(img,0,0,w,h);const id=x.getImageData(0,0,w,h),d=id.data;
+    // образцы фона: верхняя полоса и верхние две трети боковых краёв
+    const S=[];const pick=(px,py)=>{const i=(py*w+px)*4;if(d[i+3]>200)S.push([d[i],d[i+1],d[i+2]]);};
+    for(let px=0;px<w;px+=6)for(let py=0;py<Math.max(2,h*.04);py+=3)pick(px,py|0);
+    for(let py=0;py<h*.66;py+=6)for(let px=0;px<w*.05;px+=3){pick(px|0,py|0);pick((w-1-px)|0,py|0);}
+    if(S.length>50){const m=[0,1,2].map(j=>{const a=S.map(p=>p[j]).sort((p,q)=>p-q);return a[a.length>>1];});
+      let near=0;for(const p of S){if(Math.hypot(p[0]-m[0],p[1]-m[1],p[2]-m[2])<34)near++;}
+      if(near/S.length>.8){const mc=Math.max(...m)-Math.min(...m),ml=(m[0]+m[1]+m[2])/3;
+        // фон по строкам: медиана левого и правого края своей полосы (у стены часто градиент сверху вниз)
+        const rowBg=[];const band=Math.max(8,h*.04|0);for(let py=0;py<h;py++){if(py%band)continue;const L=[];for(let yy=py;yy<Math.min(h,py+band);yy+=2)for(let px=0;px<w*.04;px+=2){for(const xx of [px|0,(w-1-px)|0]){const i=(yy*w+xx)*4;L.push([d[i],d[i+1],d[i+2]]);}}
+          const md=[0,1,2].map(j=>{const q=L.map(p=>p[j]).sort((p,r)=>p-r);return q[q.length>>1];});rowBg[py/band|0]=Math.hypot(md[0]-m[0],md[1]-m[1],md[2]-m[2])<40?md:m;}
+        const AL=new Float32Array(w*h);
+        for(let py=0;py<h;py++){const rb=rowBg[py/band|0]||m;for(let px=0;px<w;px++){const i=(py*w+px)*4,r=d[i],g=d[i+1],bb=d[i+2];
+          const dd=Math.min(Math.hypot(r-m[0],g-m[1],bb-m[2]),Math.hypot(r-rb[0],g-rb[1],bb-rb[2]));
+          // серые тени на стене (мало цвета, светлее волос) тоже считаем фоном
+          const ch=Math.max(r,g,bb)-Math.min(r,g,bb),lum=(r+g+bb)/3,grey=mc<30&&ch<mc+16&&lum>ml*.62;
+          const t1=grey?44:26,t2=grey?80:58;AL[py*w+px]=dd<=t1?0:dd>=t2?1:(dd-t1)/(t2-t1);}}
+        // прозрачным делаем только фон, связанный с краями кадра: светлые места на лице и одежде остаются
+        const seen=new Uint8Array(w*h),st=[];for(let px=0;px<w;px++){st.push(px,(h-1)*w+px);}for(let py=0;py<h;py++){st.push(py*w,py*w+w-1);}
+        while(st.length){const p=st.pop();if(seen[p]||AL[p]>=.6)continue;seen[p]=1;const px=p%w;if(px>0)st.push(p-1);if(px<w-1)st.push(p+1);if(p>=w)st.push(p-w);if(p<w*(h-1))st.push(p+w);}
+        // чуть расширяем фон на 1 пиксель, чтобы сгладить край
+        for(let p=0;p<w*h;p++){const i=p*4;let a=AL[p];if(!seen[p]){const px=p%w;const nb=(px>0&&seen[p-1])||(px<w-1&&seen[p+1])||(p>=w&&seen[p-w])||(p<w*(h-1)&&seen[p+w]);a=nb?Math.max(a,.5):1;}d[i+3]=Math.round(d[i+3]*a);}
+        // убираем крошки: связная область фона от краёв (заливка), всё остальное непрозрачное
+        x.putImageData(id,0,0);const c2=document.createElement('canvas');c2.width=w;c2.height=h;const y=c2.getContext('2d');try{y.filter='blur(1.5px)';}catch(_){}y.drawImage(c,0,0);y.filter='none';res=c2;}}}catch(e){}
+  img._key=res;return res;}
 function glbSnowFront(ctx,g,o){// сугроб спереди: заново кладём снег с фона поверх ног фигурки, верх мягко растушёван
   const e=NYBG[g.k];if(!e||!e.im.complete)return;const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
   x.save();if(g.flip){x.translate(W,0);x.scale(-1,1);}x.drawImage(e.im,0,0,W,H);x.restore();
@@ -1469,22 +1497,26 @@ function glbSnowFront(ctx,g,o){// сугроб спереди: заново кл
   x.beginPath();x.ellipse(o.x,o.y,o.r-4,o.r-4,0,0,7);x.fill();ctx.drawImage(c,0,0);}
 function glbGlass(ctx,g,o){// блики стекла поверх фото: фон в режиме «экран» внутри шара + мягкая виньетка по краю
   const e=NYBG[g.k];ctx.save();ctx.beginPath();ctx.arc(o.x,o.y,o.r-3,0,7);ctx.clip();
-  if(e&&e.im.complete){ctx.globalCompositeOperation='screen';ctx.globalAlpha=.32;ctx.save();if(g.flip){ctx.translate(W,0);ctx.scale(-1,1);}ctx.drawImage(e.im,0,0,W,H);ctx.restore();ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;}
-  const v=ctx.createRadialGradient(o.x,o.y,o.r*.62,o.x,o.y,o.r);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(10,6,2,.18)');ctx.fillStyle=v;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);
-  const h=ctx.createRadialGradient(o.x-o.r*.42,o.y-o.r*.48,0,o.x-o.r*.42,o.y-o.r*.48,o.r*.55);h.addColorStop(0,'rgba(255,255,255,.22)');h.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=h;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);
+  if(e&&e.im.complete){// только яркие отражения стекла с фона, без мути: остальное уходит в чёрное и в режиме «экран» не видно
+    const hc=document.createElement('canvas');hc.width=W;hc.height=H;const hx=hc.getContext('2d');try{hx.filter='grayscale(1) brightness(.62) contrast(4.5)';}catch(_){}
+    if(g.flip){hx.translate(W,0);hx.scale(-1,1);}hx.drawImage(e.im,0,0,W,H);hx.setTransform(1,0,0,1,0,0);hx.filter='none';
+    // блики оставляем только у края стекла: огоньки фона в середине шара легли бы пятнами на лицо
+    hx.globalCompositeOperation='destination-in';const rg=hx.createRadialGradient(o.x,o.y,o.r*.66,o.x,o.y,o.r);rg.addColorStop(0,'rgba(0,0,0,0)');rg.addColorStop(.35,'rgba(0,0,0,1)');rg.addColorStop(1,'rgba(0,0,0,1)');hx.fillStyle=rg;hx.fillRect(0,0,W,H);
+    ctx.globalCompositeOperation='screen';ctx.globalAlpha=.7;ctx.drawImage(hc,0,0);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;}
+  const v=ctx.createRadialGradient(o.x,o.y,o.r*.62,o.x,o.y,o.r);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(30,14,4,.28)');ctx.fillStyle=v;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);
+  const h=ctx.createRadialGradient(o.x-o.r*.42,o.y-o.r*.48,0,o.x-o.r*.42,o.y-o.r*.48,o.r*.55);h.addColorStop(0,'rgba(255,255,255,.12)');h.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=h;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);
   ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(o.x,o.y,o.r*.86,Math.PI*1.08,Math.PI*1.42);ctx.stroke();ctx.restore();}
 function glbScene(ctx,kind,idx,total,img){const g=glbFor(kind,idx,total),o=glbGeo(g);
   ctx.save();if(g.flip){ctx.translate(W,0);ctx.scale(-1,1);}nyBgDraw(ctx,g.k,0);ctx.restore();
   if(img){ctx.save();ctx.beginPath();ctx.rect(0,0,W,o.base);ctx.clip();ctx.beginPath();ctx.arc(o.x,o.y,o.r-4,0,7);ctx.clip();
     // фото целиком внутри шара, как открытка в стекле: лицо ближе к верху, низ уходит в сугроб
-    const cut=imgCut(img),sx=cut?cut.x:0,sy=cut?cut.y:0,iw=cut?cut.w:(img.naturalWidth||img.width),ih=cut?cut.h:(img.naturalHeight||img.height),s=Math.max(2*o.r/iw,(o.m+20-(o.y-o.r))/ih)*1.04,dh=ih*s;
+    const cut=imgCut(img),kimg=cut?null:imgKey(img),src=kimg||img,kk=kimg?kimg.width/(img.naturalWidth||img.width):1,sx=cut?cut.x:0,sy=cut?cut.y:0,iw=cut?cut.w:(img.naturalWidth||img.width),ih=cut?cut.h:(img.naturalHeight||img.height),s=Math.max(2*o.r/iw,(o.m+20-(o.y-o.r))/ih)*1.04,dh=ih*s;
     // лицо в вертикальном фото обычно на трети высоты: ставим эту точку чуть выше центра шара, но так, чтобы фото закрывало шар целиком
-    const fy=ih>iw*1.15?.42:.45;let ty=o.y-o.r*.4-fy*dh;ty=Math.min(o.y-o.r,Math.max(o.m+20-dh,ty));ctx.drawImage(img,sx,sy,iw,ih,o.x-iw*s/2,ty,iw*s,dh);
-    ctx.globalCompositeOperation='multiply';ctx.fillStyle='rgb(246,226,200)';ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);ctx.globalCompositeOperation='source-over';
-    // иней по краю стекла
-    const fr=ctx.createRadialGradient(o.x,o.y,o.r*.66,o.x,o.y,o.r);fr.addColorStop(0,'rgba(255,255,255,0)');fr.addColorStop(.7,'rgba(244,246,250,.12)');fr.addColorStop(1,'rgba(250,252,255,.5)');ctx.fillStyle=fr;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);
+    const fy=ih>iw*1.15?.42:.45;let ty=o.y-o.r*.4-fy*dh;ty=Math.min(o.y-o.r,Math.max(o.m+20-dh,ty));try{ctx.filter='contrast(1.06) saturate(1.12)';}catch(_){}ctx.drawImage(src,sx*kk,sy*kk,iw*kk,ih*kk,o.x-iw*s/2,ty,iw*s,dh);ctx.filter='none';
+        // иней по краю стекла
+    const fr=ctx.createRadialGradient(o.x,o.y,o.r*.66,o.x,o.y,o.r);fr.addColorStop(0,'rgba(255,255,255,0)');fr.addColorStop(.86,'rgba(244,246,250,0)');fr.addColorStop(1,'rgba(250,252,255,.28)');ctx.fillStyle=fr;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);
     // лёгкая дымка над сугробом
-    const mist=ctx.createLinearGradient(0,o.m-130,0,o.m+20);mist.addColorStop(0,'rgba(255,250,244,0)');mist.addColorStop(1,'rgba(255,250,244,.4)');ctx.fillStyle=mist;ctx.fillRect(o.x-o.r,o.m-130,o.r*2,o.base-o.m+130);
+    const mist=ctx.createLinearGradient(0,o.m-130,0,o.m+20);mist.addColorStop(0,'rgba(255,250,244,0)');mist.addColorStop(1,'rgba(255,250,244,.22)');ctx.fillStyle=mist;ctx.fillRect(o.x-o.r,o.m-130,o.r*2,o.base-o.m+130);
     ctx.restore();glbSnowFront(ctx,g,o);glbGlass(ctx,g,o);}
   return o;}
 function glbTag(ctx,o,text,flip){// бумажная бирка на ниточке у подставки
@@ -3561,7 +3593,8 @@ function snowFlakes(){if(snowFl)return snowFl;let x=987654321;const rnd=()=>{x^=
 function snowDraw(ctx,u,light,clip){const {L,MH}=snowFlakes();if(clip){ctx.save();ctx.beginPath();ctx.rect(0,0,W,clip.bottom);ctx.clip();ctx.beginPath();ctx.arc(clip.x,clip.y,clip.r,0,7);ctx.clip();}
   // внутри шара снег живёт в своей коробке размером с шар: путь короче, поэтому падает вдвое медленнее, а повтор остаётся бесшовным
   const PH=clip?clip.r*2+140:MH,PW=clip?clip.r*2+80:W,X0=clip?clip.x-PW/2:0,Y0=clip?clip.y-clip.r-70:-70,ks=clip?.62:1;
-  for(const q of L){const y=Y0+(q.y/MH*PH+q.k*PH*u)%PH,x=X0+q.x/W*PW+(Math.sin(Math.PI*2*q.j*u+q.ph)*q.sw+Math.sin(Math.PI*2*(q.j+1)*u+q.ph*1.7)*q.sw*.3)*ks;
+  for(const q of L){if(clip&&q.k>1)continue;// крупные размытые хлопья в шаре выглядят как пятна на стекле — не рисуем
+    const y=Y0+(q.y/MH*PH+q.k*PH*u)%PH,x=X0+q.x/W*PW+(Math.sin(Math.PI*2*q.j*u+q.ph)*q.sw+Math.sin(Math.PI*2*(q.j+1)*u+q.ph*1.7)*q.sw*.3)*ks;
     const sp=light?q.s2:q.s;ctx.globalAlpha=light?Math.min(1,q.a+.2):q.a;const sw=sp.width*ks,sh=sp.height*ks;
     if(q.rot){ctx.save();ctx.translate(x,y);ctx.rotate(q.rot*u*Math.PI*2);ctx.drawImage(sp,-sw/2,-sh/2,sw,sh);ctx.restore();}
     else ctx.drawImage(sp,x-sw/2,y-sh/2,sw,sh);}
