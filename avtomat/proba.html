@@ -555,15 +555,21 @@ const sid=ls('km-style');if(sid)style=STYLES.find(s=>s.id===sid)||style;
 // ---------- parsing
 function clean(s){return s.replace(/\*\*|__|`/g,'').replace(/^[\s\-–—•*]+/,'').trim();}
 function parse(text){
-  const out=[];let cur=null,last='';
+  const out=[];let cur=null,last='',pend=null;
   const push=()=>{if(cur&&(cur.cover||cur.slides.length))out.push(cur);};
   for(let raw of text.split(/\r?\n/)){
     const line=clean(raw);if(!line)continue;
     if(/^карусел[ьи](?=[\s\d:№#.—–-]|$)/i.test(line)&&!/^карусел\S*\s*\d*\s*[:—–-]?\s*(обложка|слайд|финал)/i.test(line)){push();cur={cover:null,slides:[],final:null};last='';continue;}
-    const m=line.match(/^(обложка|заголовок|слайд(?:\s*\d+)?|финал|призыв)\s*[:\-—–.]\s*(.+)$/i);
+    let m=line.match(/^(обложка|хук|заголовок|слайд(?:\s*№?\s*\d+)?|финал|финальный слайд|призыв)\s*(?:\(([^)]*)\))?\s*[:\-—–.]\s*(.*)$/i);
+    if(m&&!m[3].trim()){pend={k:m[1],p:m[2]||''};continue;}
+    if(!m&&pend){m=[line,pend.k,pend.p,line];}
+    pend=null;
     if(!m){ if(cur&&last==='slide'&&cur.slides.length){const s=cur.slides[cur.slides.length-1];s.text=(s.text?s.text+' ':'')+line;} continue;}
     if(!cur)cur={cover:null,slides:[],final:null};
-    const kind=m[1].toLowerCase(),[a,b]=m[2].split('|').map(x=>x&&x.trim());
+    let kind=m[1].toLowerCase();const par=(m[2]||'').toLowerCase();
+    if(kind==='хук')kind='обложка';if(kind.startsWith('финал'))kind='финал';
+    if(kind.startsWith('слайд')&&/обложк|хук/.test(par))kind='обложка';else if(kind.startsWith('слайд')&&/финал|призыв/.test(par))kind='финал';
+    const [a,b]=m[3].replace(/^[«"]+|[»"]+$/g,'').split('|').map(x=>x&&x.trim());
     last=kind.startsWith('слайд')?'slide':kind;
     if((kind==='обложка'||kind==='заголовок')&&cur.cover&&(cur.slides.length||cur.final)){push();cur={cover:null,slides:[],final:null};}
     if(kind==='обложка'||kind==='заголовок')cur.cover={main:a||'',accent:b||''};
