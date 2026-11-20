@@ -1299,7 +1299,7 @@ function galLabel(ctx,x,y,w,title,text){ctx.font=F('inter',400)(28);const lines=
   ctx.fillStyle='#2b1d12';ctx.font=F('play',700)(44);ctx.fillText(title||'',x+28,y+66,w-56);
   ctx.font=F('inter',400)(28);ctx.fillStyle='#4a3a2c';lines.forEach((l,i)=>ctx.fillText(l,x+28,y+112+i*38));return h;}
 // рамы на стыках слайдов: половина на одном слайде, половина на соседнем
-function galSeam(ctx,b){const img=galPhotoAt(b),top=b%2===1,kind=b%3;const cx=b*W,cy=top?330:1040;
+function galSeam(ctx,b){const img=galPhotoAt(b),top=b%2===1,kind=b%3;const cx=b*W,cy=top?350:1130;
   if(kind===0)galOval(ctx,img,cx,cy,165,215,34,1.8,.5,.35,false);
   else if(kind===1)galOval(ctx,img,cx,cy,150,200,28,2,.45,.55,true);
   else galRect(ctx,img,cx-160,cy-205,320,410,40,1.9,.55,.45);}
@@ -1307,13 +1307,13 @@ function galScene(ctx,r,total,draw){galWall(ctx,r,total);ctx.save();ctx.translat
   for(const b of [r,r+1])if(b>=1&&b<=total-1)galSeam(ctx,b);ctx.restore();draw();}
 const NY_GAL={id:'nygal',name:'Мой год · Галерея',full:true,ny:true,sample:'play',sw:800,
   cover(ctx,st,c,p,total){galScene(ctx,0,total,()=>{ctx.font=F('inter',600)(30);ctx.fillStyle='#E9C77B';spaced(ctx,10);ctx.fillText('ВЫСТАВКА ОДНОГО ГОДА',90,170);spaced(ctx,0);
-      galRect(ctx,galPhotoAt(0),160,260,540,680,60,1,.5,.35);
-      nyRich(ctx,c,st,90,1030,W-330,260,104,54,F('play',800),'#FFF4DC','#E9C77B');nyNick(ctx,'#F2D9A0',90,H-50);});},
+      galRect(ctx,galPhotoAt(0),160,270,540,740,60,1,.5,.35);
+      nyRich(ctx,c,st,90,1110,W-330,260,104,54,F('play',800),'#FFF4DC','#E9C77B');nyNick(ctx,'#F2D9A0',90,H-50);});},
   slide(ctx,st,s,n,idx,total,p){const r=idx-1;galScene(ctx,r,total,()=>{const m=nyMonth(s.title);const ttl=m>=0?NY_MN[m][0].toUpperCase()+NY_MN[m].slice(1):(s.title||'');
-      const fx=r%2?300:260,fy=r%2?200:150;galRect(ctx,galPhotoAt(r),fx,fy,500,640,58,1,.5,.35);
-      galLabel(ctx,fx-30,fy+640+100,560,ttl,s.text);ctx.font=F('inter',500)(28);ctx.fillStyle='#F2D9A0';ctx.globalAlpha=.7;ctx.textAlign='right';ctx.fillText(`${idx}/${total}`,W-60,70);ctx.textAlign='left';ctx.globalAlpha=1;});},
-  final(ctx,st,f,idx,total,p){galScene(ctx,total-1,total,()=>{const x=230,w=W-400;let y=nyText(ctx,f.cta||'',x+w/2,430,w,420,80,44,F('play',800),'#FFF4DC','center',1.12);
-      ctx.font=F('inter',600)(28);ctx.fillStyle='#E9C77B';spaced(ctx,8);ctx.textAlign='center';ctx.fillText('ВЫСТАВКА ЗАКРЫТА · ДО ВСТРЕЧИ В '+(nyYear()+1),x+w/2,330);spaced(ctx,0);ctx.textAlign='left';
+      const fx=r%2?300:260,fy=r%2?210:160;galRect(ctx,galPhotoAt(r),fx,fy,500,700,58,1,.5,.35);
+      galLabel(ctx,fx-30,fy+700+100,560,ttl,s.text);ctx.font=F('inter',500)(28);ctx.fillStyle='#F2D9A0';ctx.globalAlpha=.7;ctx.textAlign='right';ctx.fillText(`${idx}/${total}`,W-60,70);ctx.textAlign='left';ctx.globalAlpha=1;});},
+  final(ctx,st,f,idx,total,p){galScene(ctx,total-1,total,()=>{const x=230,w=W-400;let y=nyText(ctx,f.cta||'',x+w/2,520,w,420,80,44,F('play',800),'#FFF4DC','center',1.12);
+      ctx.font=F('inter',600)(28);ctx.fillStyle='#E9C77B';spaced(ctx,8);ctx.textAlign='center';ctx.fillText('ВЫСТАВКА ЗАКРЫТА · ДО ВСТРЕЧИ В '+(nyYear()+1),x+w/2,420);spaced(ctx,0);ctx.textAlign='left';
       if(f.word)nyChip(ctx,f.word,x+w/2,y+50,'#E9C77B','#3a0a0e',null,'center');nyNick(ctx,'#F2D9A0',x+w/2,H-60,'center');});}};
 
 const NY_LAYS={nycal:NY_CAL,nyfilm:NY_FILM,nycard:NY_CARD,nywish:NY_WISH,nypick:NY_PICK,nygal:NY_GAL},NY_YEAR=[NY_CAL,NY_FILM,NY_CARD];let NYSEL=null;
