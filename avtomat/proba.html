@@ -1448,9 +1448,12 @@ const NY_GLOW={id:'nyglow',name:'Сияние',full:true,ny:true,bgk:'glow',samp
     if(f.word)nyChip(ctx,f.word,W/2,y+50,'#F2C36B','#2a1a08',null,'center');nyNick(ctx,'#F2D9A0',W/2,H-60,'center');}};
 
 // ===== «Снежный шар»: ты фигуркой внутри шара (вырезанное фото) или фото окошком; полка с шарами через все слайды
-NYBG_SRC.globeA='bg/ny_globe_a.jpg';NYBG_SRC.globeB='bg/ny_globe_b.jpg';NYBG_SRC.globeC='bg/ny_globe_c.jpg';
+NYBG_SRC.globeA='bg/ny_globe2_a.jpg';NYBG_SRC.globeB='bg/ny_globe2_b.jpg';NYBG_SRC.globeC='bg/ny_globe2_c.jpg';
 // геометрия шара на каждом фоне: центр, радиус, верх сугроба, верх подставки
-const GLB={globeA:{x:538,y:652,r:401,m:838,base:960},globeB:{x:538,y:651,r:318,m:789,base:905},globeC:{x:535,y:669,r:312,m:826,base:885}};
+const GLB={globeA:{x:538,y:682,r:420,m:890,base:1010},globeB:{x:540,y:670,r:389,m:862,base:970},globeC:{x:540,y:680,r:359,m:858,base:940}};
+// мягкое тёплое затемнение у верхнего и нижнего края, чтобы надписи читались на светлых огоньках (не чёрная полоса)
+function glbShade(ctx,top,bot){ctx.save();let g=ctx.createLinearGradient(0,0,0,top);g.addColorStop(0,'rgba(40,16,3,.5)');g.addColorStop(1,'rgba(40,16,3,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,top);
+  g=ctx.createLinearGradient(0,bot,0,H);g.addColorStop(0,'rgba(40,16,3,0)');g.addColorStop(1,'rgba(40,16,3,.6)');ctx.fillStyle=g;ctx.fillRect(0,bot,W,H-bot);ctx.restore();}
 function glbFor(kind,idx,total){if(kind==='cover')return {k:'globeA',flip:false};if(kind==='final')return {k:'globeC',flip:false};return {k:'globeB',flip:idx%2===0};}
 function glbGeo(g){const o=GLB[g.k];return g.flip?{...o,x:W-o.x}:o;}
 function imgCut(img){if(!img)return null;if(img._cut!==undefined)return img._cut;let res=null;
@@ -1462,24 +1465,26 @@ function imgCut(img){if(!img)return null;if(img._cut!==undefined)return img._cut
 function glbSnowFront(ctx,g,o){// сугроб спереди: заново кладём снег с фона поверх ног фигурки, верх мягко растушёван
   const e=NYBG[g.k];if(!e||!e.im.complete)return;const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
   x.save();if(g.flip){x.translate(W,0);x.scale(-1,1);}x.drawImage(e.im,0,0,W,H);x.restore();
-  x.globalCompositeOperation='destination-in';const gr=x.createLinearGradient(0,o.m-10,0,o.m+38);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,1)');x.fillStyle=gr;
+  x.globalCompositeOperation='destination-in';const gr=x.createLinearGradient(0,o.m-18,0,o.m+50);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,1)');x.fillStyle=gr;
   x.beginPath();x.ellipse(o.x,o.y,o.r-4,o.r-4,0,0,7);x.fill();ctx.drawImage(c,0,0);}
 function glbGlass(ctx,g,o){// блики стекла поверх фото: фон в режиме «экран» внутри шара + мягкая виньетка по краю
   const e=NYBG[g.k];ctx.save();ctx.beginPath();ctx.arc(o.x,o.y,o.r-3,0,7);ctx.clip();
-  if(e&&e.im.complete){ctx.globalCompositeOperation='screen';ctx.globalAlpha=.55;ctx.save();if(g.flip){ctx.translate(W,0);ctx.scale(-1,1);}ctx.drawImage(e.im,0,0,W,H);ctx.restore();ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;}
-  const v=ctx.createRadialGradient(o.x,o.y,o.r*.62,o.x,o.y,o.r);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(10,6,2,.38)');ctx.fillStyle=v;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);
+  if(e&&e.im.complete){ctx.globalCompositeOperation='screen';ctx.globalAlpha=.32;ctx.save();if(g.flip){ctx.translate(W,0);ctx.scale(-1,1);}ctx.drawImage(e.im,0,0,W,H);ctx.restore();ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;}
+  const v=ctx.createRadialGradient(o.x,o.y,o.r*.62,o.x,o.y,o.r);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(10,6,2,.18)');ctx.fillStyle=v;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);
   const h=ctx.createRadialGradient(o.x-o.r*.42,o.y-o.r*.48,0,o.x-o.r*.42,o.y-o.r*.48,o.r*.55);h.addColorStop(0,'rgba(255,255,255,.22)');h.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=h;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);
   ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(o.x,o.y,o.r*.86,Math.PI*1.08,Math.PI*1.42);ctx.stroke();ctx.restore();}
 function glbScene(ctx,kind,idx,total,img){const g=glbFor(kind,idx,total),o=glbGeo(g);
   ctx.save();if(g.flip){ctx.translate(W,0);ctx.scale(-1,1);}nyBgDraw(ctx,g.k,0);ctx.restore();
-  if(img){const cut=imgCut(img);ctx.save();ctx.beginPath();ctx.rect(0,0,W,o.base);ctx.clip();ctx.beginPath();ctx.arc(o.x,o.y,o.r-4,0,7);ctx.clip();
-    if(cut){// фигурка стоит на снегу
-      const top=o.y-o.r*.62,foot=o.m+30,hh=foot-top,s=Math.min(hh/cut.h,(o.r*1.25)/cut.w),dw=cut.w*s,dh=cut.h*s;
-      ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=18;ctx.shadowOffsetY=6;
-      ctx.drawImage(img,cut.x,cut.y,cut.w,cut.h,o.x-dw/2,foot-dh,dw,dh);ctx.shadowColor='transparent';}
-    else{const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,s=Math.max(2*o.r/iw,2*o.r/ih);ctx.drawImage(img,o.x-iw*s/2,o.y-o.r+(2*o.r-ih*s)*.35,iw*s,ih*s);// обычное фото: тёплый тон и глубина, чтобы читалось как стекло
-      ctx.globalCompositeOperation='multiply';ctx.fillStyle='rgba(214,170,120,1)';ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);ctx.globalCompositeOperation='source-over';
-      const dv=ctx.createRadialGradient(o.x,o.y-o.r*.1,o.r*.35,o.x,o.y,o.r);dv.addColorStop(0,'rgba(0,0,0,0)');dv.addColorStop(1,'rgba(20,10,4,.7)');ctx.fillStyle=dv;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);}
+  if(img){ctx.save();ctx.beginPath();ctx.rect(0,0,W,o.base);ctx.clip();ctx.beginPath();ctx.arc(o.x,o.y,o.r-4,0,7);ctx.clip();
+    // фото целиком внутри шара, как открытка в стекле: лицо ближе к верху, низ уходит в сугроб
+    const cut=imgCut(img),sx=cut?cut.x:0,sy=cut?cut.y:0,iw=cut?cut.w:(img.naturalWidth||img.width),ih=cut?cut.h:(img.naturalHeight||img.height),s=Math.max(2*o.r/iw,(o.m+20-(o.y-o.r))/ih)*1.04,dh=ih*s;
+    // лицо в вертикальном фото обычно на трети высоты: ставим эту точку чуть выше центра шара, но так, чтобы фото закрывало шар целиком
+    const fy=ih>iw*1.15?.42:.45;let ty=o.y-o.r*.4-fy*dh;ty=Math.min(o.y-o.r,Math.max(o.m+20-dh,ty));ctx.drawImage(img,sx,sy,iw,ih,o.x-iw*s/2,ty,iw*s,dh);
+    ctx.globalCompositeOperation='multiply';ctx.fillStyle='rgb(246,226,200)';ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);ctx.globalCompositeOperation='source-over';
+    // иней по краю стекла
+    const fr=ctx.createRadialGradient(o.x,o.y,o.r*.66,o.x,o.y,o.r);fr.addColorStop(0,'rgba(255,255,255,0)');fr.addColorStop(.7,'rgba(244,246,250,.12)');fr.addColorStop(1,'rgba(250,252,255,.5)');ctx.fillStyle=fr;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);
+    // лёгкая дымка над сугробом
+    const mist=ctx.createLinearGradient(0,o.m-130,0,o.m+20);mist.addColorStop(0,'rgba(255,250,244,0)');mist.addColorStop(1,'rgba(255,250,244,.4)');ctx.fillStyle=mist;ctx.fillRect(o.x-o.r,o.m-130,o.r*2,o.base-o.m+130);
     ctx.restore();glbSnowFront(ctx,g,o);glbGlass(ctx,g,o);}
   return o;}
 function glbTag(ctx,o,text,flip){// бумажная бирка на ниточке у подставки
@@ -1494,21 +1499,19 @@ function glbTag(ctx,o,text,flip){// бумажная бирка на ниточ�
 function glbArc(ctx,text,cx,cy,R,size,col){ctx.save();ctx.font=F('corm',500)(size);ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='alphabetic';
   const ch=[...String(text).toUpperCase()];let sp,ws,tot;const meas=()=>{sp=size*.32;ws=ch.map(c=>ctx.measureText(c).width+sp);tot=ws.reduce((a,b)=>a+b,0)-sp;};meas();
   while(tot/R>2.1&&size>34){size-=2;ctx.font=F('corm',500)(size);meas();}let a=-Math.PI/2-tot/R/2;
-  ch.forEach((c,i)=>{const w=ws[i]-sp,mid=a+w/2/R;ctx.save();ctx.translate(cx+Math.cos(mid)*R,cy+Math.sin(mid)*R);ctx.rotate(mid+Math.PI/2);ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=10;ctx.fillText(c,0,0);ctx.restore();a+=ws[i]/R;});ctx.restore();}
+  ch.forEach((c,i)=>{const w=ws[i]-sp,mid=a+w/2/R;ctx.save();ctx.translate(cx+Math.cos(mid)*R,cy+Math.sin(mid)*R);ctx.rotate(mid+Math.PI/2);ctx.shadowColor='rgba(34,12,0,.9)';ctx.shadowBlur=18;ctx.fillText(c,0,0);ctx.shadowBlur=5;ctx.fillText(c,0,0);ctx.restore();a+=ws[i]/R;});ctx.restore();}
 function glbScript(ctx,text,x,y,size,col,maxW){ctx.save();ctx.font=F('script',400)(size);ctx.fillStyle=col;ctx.textAlign='center';ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=14;
   let s=size;while(s>30&&ctx.measureText(text).width>(maxW||W-120)){s-=4;ctx.font=F('script',400)(s);}ctx.fillText(text,x,y);ctx.shadowBlur=4;ctx.shadowColor='rgba(0,0,0,.6)';ctx.fillText(text,x,y);ctx.restore();}
 const NY_ORD=['первая','вторая','третья','четвёртая','пятая','шестая','седьмая','восьмая','девятая','десятая','одиннадцатая','двенадцатая','тринадцатая','четырнадцатая','пятнадцатая'];
 const NY_GLOBE={id:'nyglobe',name:'Снежный шар',full:true,ny:true,bgk:'globeA',bgks:['globeA','globeB','globeC'],globe:true,sample:'corm',sw:500,
   globeClip(n,total){const kind=n===0?'cover':n===total-1?'final':'slide';const o=glbGeo(glbFor(kind,n+1,total));return {x:o.x,y:o.y,r:o.r-6,bottom:o.base};},
-  cover(ctx,st,c,p,total){const o=glbScene(ctx,'cover',1,total,p);glbArc(ctx,c.main||'Мой 2026',o.x,o.y,o.r+44,78,'#FFF4E2');
-    if(c.accent)glbScript(ctx,c.accent,W/2,o.y-o.r+104,96,'#FFF4E2');nyArrow(ctx,W/2-260,1335,520,'#FFF4E2');nyNick(ctx,'#F2DDB8',80,H-30);},
-  slide(ctx,st,s,n,idx,total,p){const o=glbScene(ctx,'slide',idx,total,p);glbArc(ctx,nyMonthTitle(s.title),o.x,o.y,o.r+40,74,'#FFF4E2');
-    glbScript(ctx,'глава '+(NY_ORD[idx-2]||String(idx-1)),o.x,o.y-o.r+66,64,'#FFE7BE');
-    ctx.save();const gr=ctx.createLinearGradient(0,1000,0,H);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.6)');ctx.fillStyle=gr;ctx.fillRect(0,1000,W,H-1000);ctx.restore();
-    nyText(ctx,s.text,W/2,1120,W-150,H-1120-50,50,32,F('corm',600),'#FFF4E2','center',1.22);nyCnt(ctx,'#FFF4E2',idx,total);},
-  final(ctx,st,f,idx,total,p){const o=glbScene(ctx,'final',total,total,null);glbArc(ctx,'Новая глава · '+(nyYear()+1),o.x,o.y,o.r+40,64,'#FFF4E2');
-    nyText(ctx,f.cta||'А что будет внутри в 2027?',W/2,1110,W-140,200,84,44,F('script',400),'#FFF4E2','center',1.12);
-    if(f.word)nyChip(ctx,f.word,W/2,1300,'#6E0006','#FFF4E2',F('hand',400),'center');nyNick(ctx,'#F2DDB8',W/2,H-24,'center');}};
+  cover(ctx,st,c,p,total){const o=glbScene(ctx,'cover',1,total,p);glbShade(ctx,330,1200);glbArc(ctx,c.main||'Мой 2026',o.x,o.y,o.r+44,78,'#FFF4E2');
+    nyArrow(ctx,W/2-260,1345,520,'#FFF4E2');nyNick(ctx,'#F7E6C8',80,H-30);},
+  slide(ctx,st,s,n,idx,total,p){const o=glbScene(ctx,'slide',idx,total,p);glbShade(ctx,320,1130);glbArc(ctx,nyMonthTitle(s.title),o.x,o.y,o.r+40,74,'#FFF4E2');
+    ctx.save();ctx.shadowColor='rgba(34,12,0,.9)';ctx.shadowBlur=14;nyText(ctx,s.text,W/2,1282,W-130,130,50,32,F('corm',700),'#FFF6E6','center',1.15);ctx.restore();nyCnt(ctx,'#FFF4E2',idx,total);},
+  final(ctx,st,f,idx,total,p){const o=glbScene(ctx,'final',total,total,null);glbShade(ctx,330,1130);glbArc(ctx,'Новая глава · '+(nyYear()+1),o.x,o.y,o.r+40,64,'#FFF4E2');
+    ctx.save();ctx.shadowColor='rgba(34,12,0,.9)';ctx.shadowBlur=16;nyText(ctx,f.cta||'А что будет внутри в 2027?',W/2,1290,W-120,f.word?80:120,f.word?64:74,40,F('script',400),'#FFF6E6','center',1.1);ctx.restore();
+    if(f.word)nyChip(ctx,f.word,W/2,1335,'#6E0006','#FFF4E2',F('hand',400),'center');nyNick(ctx,'#F7E6C8',W/2,H-14,'center');}};
 
 const NY_LAYS={nycal:NY_CAL,nyfilm:NY_FILM,nycard:NY_CARD,nywish:NY_WISH,nypick:NY_PICK,nygal:NY_GAL,nylights:NY_LIGHTS,nycandy:NY_CANDY,nyvinyl:NY_VINYL,nymin:NY_MIN,nyglow:NY_GLOW,nyglobe:NY_GLOBE},NY_YEAR=[NY_GAL,NY_LIGHTS,NY_CANDY,NY_VINYL,NY_MIN,NY_GLOW];let NYSEL=null;
 const FONT_LOADS=['500 40px "Cormorant Garamond"','600 40px "Cormorant Garamond"','700 40px "Cormorant Garamond"','400 40px "Bad Script"','400 40px Neucha','400 40px "JetBrains Mono"','700 40px "JetBrains Mono"','900 100px Inter','800 80px Inter','700 40px Inter','600 30px Inter','500 30px Inter','400 50px Inter','800 80px Unbounded','700 60px Unbounded',
@@ -3556,11 +3559,12 @@ function snowFlakes(){if(snowFl)return snowFl;let x=987654321;const rnd=()=>{x^=
       sw:ly.sw[0]+rnd()*(ly.sw[1]-ly.sw[0]),j:1+Math.floor(rnd()*2),ph:rnd()*7,rot:cr?(rnd()<.5?-1:1):0});}});
   snowFl={L,MH};return snowFl;}
 function snowDraw(ctx,u,light,clip){const {L,MH}=snowFlakes();if(clip){ctx.save();ctx.beginPath();ctx.rect(0,0,W,clip.bottom);ctx.clip();ctx.beginPath();ctx.arc(clip.x,clip.y,clip.r,0,7);ctx.clip();}
-  // внутри шара снег гуще: три прохода со сдвигом (сдвиг постоянный, поэтому повтор остаётся бесшовным)
-  const passes=clip?[[0,0],[.33,.41],[.67,.77]]:[[0,0]];
-  for(const [oy,ox] of passes)for(const q of L){const y=((q.y+oy*MH+q.k*MH*u)%MH)-70,x=((q.x+ox*W)%W)+Math.sin(Math.PI*2*q.j*u+q.ph)*q.sw+Math.sin(Math.PI*2*(q.j+1)*u+q.ph*1.7)*q.sw*.3;
-    const sp=light?q.s2:q.s;ctx.globalAlpha=light?Math.min(1,q.a+.2):q.a;if(q.rot){ctx.save();ctx.translate(x,y);ctx.rotate(q.rot*u*Math.PI*2);ctx.drawImage(sp,-sp.width/2,-sp.height/2);ctx.restore();}
-    else ctx.drawImage(sp,x-sp.width/2,y-sp.height/2);}
+  // внутри шара снег живёт в своей коробке размером с шар: путь короче, поэтому падает вдвое медленнее, а повтор остаётся бесшовным
+  const PH=clip?clip.r*2+140:MH,PW=clip?clip.r*2+80:W,X0=clip?clip.x-PW/2:0,Y0=clip?clip.y-clip.r-70:-70,ks=clip?.62:1;
+  for(const q of L){const y=Y0+(q.y/MH*PH+q.k*PH*u)%PH,x=X0+q.x/W*PW+(Math.sin(Math.PI*2*q.j*u+q.ph)*q.sw+Math.sin(Math.PI*2*(q.j+1)*u+q.ph*1.7)*q.sw*.3)*ks;
+    const sp=light?q.s2:q.s;ctx.globalAlpha=light?Math.min(1,q.a+.2):q.a;const sw=sp.width*ks,sh=sp.height*ks;
+    if(q.rot){ctx.save();ctx.translate(x,y);ctx.rotate(q.rot*u*Math.PI*2);ctx.drawImage(sp,-sw/2,-sh/2,sw,sh);ctx.restore();}
+    else ctx.drawImage(sp,x-sw/2,y-sh/2,sw,sh);}
   ctx.globalAlpha=1;if(clip)ctx.restore();}
 function snowClipFor(r,n){const L=r&&typeof NY_LAYS!=='undefined'?NY_LAYS[r.lid]:null;return L&&L.globeClip?L.globeClip(n,r.blobs?r.blobs.length:r.urls.length):null;}
 function snowNeed(r,n){return snowFor(n)||!!snowClipFor(r,n);}
