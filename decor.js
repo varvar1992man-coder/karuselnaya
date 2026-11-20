@@ -55,7 +55,7 @@
     for (var px = 0; px <= W; px += 1.6) {
       var py = Y(px);
       for (var k = 0; k < 3; k++) { var a = rnd() * Math.PI * 2, l = 5 + rnd() * 11, gold = rnd() < .62;
-        strands.push([px, py, Math.cos(a) * l, Math.sin(a) * l * .9, gold ? (rnd() < .5 ? '#E8B84A' : '#F6D77E') : (rnd() < .5 ? '#D7D7D7' : '#F2F2F2')]); }
+        var G = ['#123D25', '#1B5233', '#22663F', '#2F7D4E', '#0E3320']; strands.push([px, py, Math.cos(a) * l, Math.sin(a) * l * .9, gold ? G[Math.floor(rnd() * 3)] : G[2 + Math.floor(rnd() * 3)]]); }
       if (rnd() < .05) sparks.push([px + (rnd() - .5) * 14, py + (rnd() - .5) * 14, rnd() * 6.28]);
     }
     for (var bx = span * .12; bx < W; bx += span / 5) bulbs.push([bx, Y(bx) + 14, bulbs.length % 4]);
