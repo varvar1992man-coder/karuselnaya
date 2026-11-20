@@ -1316,7 +1316,118 @@ const NY_GAL={id:'nygal',name:'Мой год · Галерея',full:true,ny:tru
       ctx.font=F('inter',600)(28);ctx.fillStyle='#E9C77B';spaced(ctx,8);ctx.textAlign='center';ctx.fillText('ВЫСТАВКА ЗАКРЫТА · ДО ВСТРЕЧИ В '+(nyYear()+1),x+w/2,420);spaced(ctx,0);ctx.textAlign='left';
       if(f.word)nyChip(ctx,f.word,x+w/2,y+50,'#E9C77B','#3a0a0e',null,'center');nyNick(ctx,'#F2D9A0',x+w/2,H-60,'center');});}};
 
-const NY_LAYS={nycal:NY_CAL,nyfilm:NY_FILM,nycard:NY_CARD,nywish:NY_WISH,nypick:NY_PICK,nygal:NY_GAL},NY_YEAR=[NY_CAL,NY_FILM,NY_CARD];let NYSEL=null;
+// ===== Пять новогодних видов на фото-фонах (фоны лежат рядом: bg/*.jpg, грузятся только когда нужны)
+const NYBG={};const NYBG_SRC={lights:'bg/ny_lights.jpg',candy:'bg/ny_candy.jpg',vinyl:'bg/ny_vinyl.jpg',min:'bg/ny_min.jpg',glow:'bg/ny_glow.jpg'};
+function nyBgLoad(k){if(NYBG[k])return NYBG[k].p;const im=new Image();const p=new Promise(ok=>{im.onload=()=>ok(im);im.onerror=()=>ok(null);});im.src=NYBG_SRC[k];NYBG[k]={im,p};return p;}
+async function nyPrep(){const L=NYSEL==='year'?NY_YEAR:[NY_LAYS[NYSEL]];await Promise.all(L.filter(l=>l&&l.bgk).map(l=>nyBgLoad(l.bgk)));}
+function nyBgDraw(ctx,k,dark){const e=NYBG[k];if(e&&e.im.complete&&e.im.naturalWidth)ctx.drawImage(e.im,0,0,W,H);else{ctx.fillStyle='#0f1a14';ctx.fillRect(0,0,W,H);}
+  if(dark){ctx.fillStyle=`rgba(0,0,0,${dark})`;ctx.fillRect(0,0,W,H);}}
+function nyShade(ctx,y0,y1,a){const g=ctx.createLinearGradient(0,y0,0,y1);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${a})`);ctx.fillStyle=g;ctx.fillRect(0,y0,W,y1-y0);}
+function nyPh(ctx,img,x,y,w,h,ay){if(!img){const g=ctx.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,'#3a3a3a');g.addColorStop(1,'#1a1a1a');ctx.fillStyle=g;ctx.fillRect(x,y,w,h);return;}
+  const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,s=Math.max(w/iw,h/ih);ctx.drawImage(img,x+(w-iw*s)/2,y+(h-ih*s)*(ay==null?.4:ay),iw*s,ih*s);}
+function nyMonthTitle(t){const m=nyMonth(t);return m>=0?NY_MN[m][0].toUpperCase()+NY_MN[m].slice(1):(t||'');}
+function nyCnt(ctx,col,idx,total){ctx.font=F('inter',500)(28);ctx.fillStyle=col;ctx.globalAlpha=.65;ctx.textAlign='right';ctx.fillText(`${idx}/${total}`,W-60,70);ctx.textAlign='left';ctx.globalAlpha=1;}
+
+// 1. «Фотогирлянда»: тёмная ель с огоньками, полароиды висят на нитке, нитка продолжается со слайда на слайд
+function wireY(x,base){const u=((x%W)+W)%W/W;return base+Math.sin(Math.PI*u)*70;}
+function nyWire(ctx,base){ctx.save();ctx.strokeStyle='rgba(30,22,14,.9)';ctx.lineWidth=3;ctx.beginPath();for(let x=-2;x<=W+2;x+=6){const y=wireY(x,base);x?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+  for(let x=40;x<W;x+=90){const y=wireY(x,base);ctx.save();const g=ctx.createRadialGradient(x,y+12,0,x,y+12,26);g.addColorStop(0,'rgba(255,214,140,.95)');g.addColorStop(.25,'rgba(255,190,90,.55)');g.addColorStop(1,'rgba(255,170,60,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y+12,26,0,7);ctx.fill();
+    ctx.fillStyle='#fff3cf';ctx.beginPath();ctx.ellipse(x,y+12,5,8,0,0,7);ctx.fill();ctx.restore();}ctx.restore();}
+function nyPin(ctx,x,y){ctx.save();ctx.fillStyle='#c99a5b';ctx.strokeStyle='rgba(60,35,10,.6)';ctx.lineWidth=1.5;rr(ctx,x-9,y-30,18,62,4);ctx.fill();ctx.stroke();ctx.fillStyle='#8a8a8a';ctx.fillRect(x-10,y-4,20,6);ctx.restore();}
+function nyPola(ctx,img,cx,top,w,h,rot,cap,capF){ctx.save();ctx.translate(cx,top);ctx.rotate(rot);const pad=26,bot=cap?150:90;
+  ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=30;ctx.shadowOffsetY=16;ctx.fillStyle='#FAF7F0';ctx.fillRect(-w/2-pad,0,w+2*pad,h+pad+bot);ctx.shadowColor='transparent';
+  ctx.save();ctx.beginPath();ctx.rect(-w/2,pad,w,h);ctx.clip();nyPh(ctx,img,-w/2,pad,w,h,.35);ctx.restore();
+  if(cap){ctx.fillStyle='#2b2620';ctx.textAlign='center';ctx.font=(capF||F('play',700,true))(56);ctx.fillText(cap,0,h+pad+92,w);ctx.textAlign='left';}
+  ctx.restore();nyPin(ctx,cx,top);}
+const NY_LIGHTS={id:'nylights',name:'Фотогирлянда',full:true,ny:true,bgk:'lights',sample:'play',sw:700,
+  cover(ctx,st,c,p,total){nyBgDraw(ctx,'lights',.15);nyWire(ctx,120);nyPola(ctx,p,W/2+10,wireY(W/2,120)-6,560,620,-.03,'');
+    nyShade(ctx,880,H,.75);nyRich(ctx,c,st,W/2,1000,W-160,300,104,52,F('play',800),'#FFF6E4','#F3C77A','center');nyNick(ctx,'#F3E3C4',W/2,H-50,'center');},
+  slide(ctx,st,s,n,idx,total,p){nyBgDraw(ctx,'lights',.15);nyWire(ctx,110);const rot=idx%2?.035:-.03;
+    nyPola(ctx,p,W/2,wireY(W/2,110)-6,580,640,rot,nyMonthTitle(s.title));
+    nyShade(ctx,1000,H,.8);nyText(ctx,s.text,W/2,1080,W-160,H-1080-60,44,28,F('inter',400),'#FFF6E4','center',1.3);nyCnt(ctx,'#FFF6E4',idx,total);},
+  final(ctx,st,f,idx,total,p){nyBgDraw(ctx,'lights',.35);nyWire(ctx,120);
+    let y=nyText(ctx,f.cta||'С Новым годом!',W/2,560,W-180,420,84,44,F('play',800),'#FFF6E4','center',1.12);
+    if(f.word)nyChip(ctx,f.word,W/2,y+50,'#F3C77A','#2a1a08',null,'center');nyNick(ctx,'#F3E3C4',W/2,H-60,'center');}};
+
+// 2. «Карамель»: шары в полоску, фото внутри большого стеклянного шара, текст на белой плашке
+function nyGlassBall(ctx,img,cx,cy,r){ctx.save();ctx.shadowColor='rgba(60,0,0,.55)';ctx.shadowBlur=50;ctx.shadowOffsetY=24;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,r+14,0,7);ctx.fill();ctx.restore();
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.clip();nyPh(ctx,img,cx-r,cy-r,2*r,2*r,.35);
+  const v=ctx.createRadialGradient(cx,cy,r*.55,cx,cy,r);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.35)');ctx.fillStyle=v;ctx.fillRect(cx-r,cy-r,2*r,2*r);
+  const h=ctx.createRadialGradient(cx-r*.45,cy-r*.5,0,cx-r*.45,cy-r*.5,r*.6);h.addColorStop(0,'rgba(255,255,255,.55)');h.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=h;ctx.fillRect(cx-r,cy-r,2*r,2*r);
+  ctx.fillStyle='rgba(255,255,255,.75)';ctx.beginPath();ctx.ellipse(cx-r*.5,cy-r*.55,r*.12,r*.05,-.7,0,7);ctx.fill();ctx.restore();
+  ctx.lineWidth=14;ctx.strokeStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,r+7,0,7);ctx.stroke();
+  const cw=r*.36,ch=r*.2,g=ctx.createLinearGradient(cx-cw/2,0,cx+cw/2,0);g.addColorStop(0,'#8c8c8c');g.addColorStop(.45,'#f5f5f5');g.addColorStop(1,'#7a7a7a');
+  ctx.fillStyle=g;rr(ctx,cx-cw/2,cy-r-ch*.85,cw,ch,6);ctx.fill();ctx.strokeStyle='#bdbdbd';ctx.lineWidth=5;ctx.beginPath();ctx.arc(cx,cy-r-ch*.85-14,16,0,7);ctx.stroke();}
+function nyCard(ctx,x,y,w,h){ctx.save();ctx.shadowColor='rgba(60,0,0,.45)';ctx.shadowBlur=36;ctx.shadowOffsetY=14;ctx.fillStyle='#FFFFFF';rr(ctx,x,y,w,h,40);ctx.fill();ctx.restore();}
+const NY_CANDY={id:'nycandy',name:'Карамель',full:true,ny:true,bgk:'candy',sample:'mont',sw:900,
+  cover(ctx,st,c,p,total){nyBgDraw(ctx,'candy',.05);nyGlassBall(ctx,p,W/2,560,330);nyCard(ctx,70,990,W-140,360);
+    nyRich(ctx,c,st,W/2,1030,W-220,290,104,50,F('mont',900),'#1d1d1d','#C21E2C','center');},
+  slide(ctx,st,s,n,idx,total,p){nyBgDraw(ctx,'candy',.05);nyGlassBall(ctx,p,W/2,520,320);nyCard(ctx,70,960,W-140,420);
+    ctx.font=F('mont',900)(30);ctx.fillStyle='#C21E2C';spaced(ctx,6);ctx.fillText(String(idx-1).padStart(2,'0'),120,1035);spaced(ctx,0);
+    let y=nyText(ctx,nyMonthTitle(s.title),120,1050,W-240,120,68,40,F('mont',900),'#1d1d1d','left',1.05);
+    nyText(ctx,s.text,120,y+4,W-240,1360-y,40,26,F('inter',400),'#3a3a3a','left',1.3);nyCnt(ctx,'#ffffff',idx,total);},
+  final(ctx,st,f,idx,total,p){nyBgDraw(ctx,'candy',.05);nyCard(ctx,90,380,W-180,680);
+    let y=nyText(ctx,f.cta||'С Новым годом!',W/2,470,W-300,420,84,44,F('mont',900),'#1d1d1d','center',1.1);
+    if(f.word)nyChip(ctx,f.word,W/2,Math.min(y+40,920),'#C21E2C','#fff',null,'center');}};
+
+// 3. «Пластинка»: мой год как альбом — обложка на проигрывателе, слайды-треки с конвертом и пластинкой
+const VL={x:438,y:697,rx:219,ry:187};
+function nyLabelText(ctx,top,mid,bot){ctx.save();ctx.translate(VL.x,VL.y);ctx.scale(1,VL.ry/VL.rx);ctx.textAlign='center';ctx.fillStyle='#B3121F';
+  ctx.font=F('inter',600)(19);spaced(ctx,6);ctx.fillText(top,0,-150);spaced(ctx,0);
+  const r=fit(ctx,mid,330,96,52,26,F('play',800),1.0);ctx.font=F('play',800)(r.size);const n=r.lines.length;r.lines.forEach((l,i)=>ctx.fillText(l,0,-30-(n-1-i)*r.size));
+  ctx.font=F('play',700,true)(30);ctx.fillText(bot,0,92);
+  ctx.strokeStyle='rgba(179,18,31,.5)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,VL.rx-14,0,7);ctx.stroke();ctx.restore();}
+function nyDisc(ctx,cx,cy,R,label){ctx.save();const g=ctx.createRadialGradient(cx-R*.3,cy-R*.3,R*.1,cx,cy,R);g.addColorStop(0,'#d8222f');g.addColorStop(.6,'#8f0d17');g.addColorStop(1,'#5a0710');
+  ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=30;ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();ctx.shadowColor='transparent';
+  ctx.strokeStyle='rgba(0,0,0,.18)';ctx.lineWidth=1.5;for(let r=R*.42;r<R*.97;r+=7){ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.stroke();}
+  const sh=ctx.createLinearGradient(cx-R,cy-R,cx+R,cy+R);sh.addColorStop(.3,'rgba(255,255,255,0)');sh.addColorStop(.48,'rgba(255,255,255,.22)');sh.addColorStop(.56,'rgba(255,255,255,0)');ctx.fillStyle=sh;ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();
+  ctx.fillStyle='#F3EAD8';ctx.beginPath();ctx.arc(cx,cy,R*.36,0,7);ctx.fill();ctx.fillStyle='#B3121F';ctx.textAlign='center';ctx.font=F('play',800)(R*.11);ctx.fillText(label||'',cx,cy-R*.09,R*.6);
+  ctx.fillStyle='#777';ctx.beginPath();ctx.arc(cx,cy,R*.035,0,7);ctx.fill();ctx.textAlign='left';ctx.restore();}
+const NY_VINYL={id:'nyvinyl',name:'Пластинка',full:true,ny:true,bgk:'vinyl',sample:'play',sw:800,
+  cover(ctx,st,c,p,total){nyBgDraw(ctx,'vinyl',0);nyLabelText(ctx,'СТОРОНА А',(c.main+' '+(c.accent||'')).trim(),String(nyYear()));nyNick(ctx,'#FFF1DE',70,H-50);},
+  slide(ctx,st,s,n,idx,total,p){nyBgDraw(ctx,'vinyl',0);ctx.save();ctx.filter='blur(18px)';nyBgDraw(ctx,'vinyl',0);ctx.restore();ctx.fillStyle='rgba(30,6,8,.62)';ctx.fillRect(0,0,W,H);
+    const S=600,sx=90,sy=150;nyDisc(ctx,sx+S*.78,sy+S/2,S*.47,nyMonthTitle(s.title));
+    ctx.save();ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=40;ctx.shadowOffsetY=18;ctx.fillStyle='#111';ctx.fillRect(sx,sy,S,S);ctx.restore();
+    ctx.save();ctx.beginPath();ctx.rect(sx,sy,S,S);ctx.clip();nyPh(ctx,p,sx,sy,S,S,.35);const gl=ctx.createLinearGradient(sx,sy,sx+S,sy+S);gl.addColorStop(0,'rgba(255,255,255,.12)');gl.addColorStop(.5,'rgba(255,255,255,0)');ctx.fillStyle=gl;ctx.fillRect(sx,sy,S,S);ctx.restore();
+    ctx.font=F('inter',600)(30);ctx.fillStyle='#F3C9A0';spaced(ctx,8);ctx.fillText('ТРЕК '+String(idx-1).padStart(2,'0'),sx,sy+S+110);spaced(ctx,0);
+    let y=nyText(ctx,nyMonthTitle(s.title),sx,sy+S+130,W-2*sx,130,84,48,F('play',800),'#FFF1DE','left',1.05);
+    nyText(ctx,s.text,sx,y+6,W-2*sx,H-y-80,42,28,F('inter',400),'#F5E3D0','left',1.3);nyCnt(ctx,'#FFF1DE',idx,total);},
+  final(ctx,st,f,idx,total,p){nyBgDraw(ctx,'vinyl',0);nyLabelText(ctx,'СТОРОНА Б',String(nyYear()+1),'СКОРО');
+    ctx.fillStyle='rgba(20,4,6,.55)';rr(ctx,60,1060,W-120,320,36);ctx.fill();
+    let y=nyText(ctx,f.cta||'Что поставишь первым треком?',W/2,1100,W-200,190,60,34,F('play',800),'#FFF1DE','center',1.12);
+    if(f.word)nyChip(ctx,f.word,W/2,Math.min(y+14,1270),'#F3C9A0','#3a0a0e',null,'center');}};
+
+// 4. «Минимал»: глубокая зелёная ель, фото маленькой картиной в тонкой белой рамке, тонкая антиква
+const NY_MIN={id:'nymin',name:'Минимал люкс',full:true,ny:true,bgk:'min',sample:'play',sw:400,
+  cover(ctx,st,c,p,total){nyBgDraw(ctx,'min',.2);ctx.textAlign='center';ctx.fillStyle='#F4F1EA';
+    const r=fit(ctx,c.main||'',W-200,230,120,56,F('corm',600),1.0);ctx.font=F('corm',600)(r.size);r.lines.forEach((l,i)=>ctx.fillText(l,W/2,250+i*r.size));
+    if(c.accent){ctx.font=F('play',600,true)(54);ctx.fillText(c.accent,W/2,250+(r.lines.length-1)*r.size+90);}ctx.textAlign='left';
+    if(p){const w=480,h=620,x=W/2-w/2,y=500+Math.max(0,(r.lines.length-1)*60);ctx.save();ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=30;ctx.fillStyle='#F4F1EA';ctx.fillRect(x-12,y-12,w+24,h+24);ctx.restore();ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();nyPh(ctx,p,x,y,w,h,.35);ctx.restore();}
+    nyNick(ctx,'#F4F1EA',W/2,H-40,'center');},
+  slide(ctx,st,s,n,idx,total,p){nyBgDraw(ctx,'min',.25);const w=560,h=720,x=W/2-w/2,y=170;
+    if(p){ctx.save();ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=40;ctx.shadowOffsetY=14;ctx.fillStyle='#F4F1EA';ctx.fillRect(x-16,y-16,w+32,h+32);ctx.restore();ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();nyPh(ctx,p,x,y,w,h,.35);ctx.restore();}
+    const ty=p?y+h+110:520;ctx.textAlign='center';ctx.fillStyle='#F4F1EA';ctx.font=F('play',600,true)(46);ctx.fillText(nyMonthTitle(s.title).toLowerCase(),W/2,ty);ctx.textAlign='left';
+    nyText(ctx,s.text,W/2,ty+30,W-220,H-ty-90,p?46:64,30,F('corm',600),'#F4F1EA','center',1.25);nyCnt(ctx,'#F4F1EA',idx,total);},
+  final(ctx,st,f,idx,total,p){nyBgDraw(ctx,'min',.25);ctx.textAlign='center';ctx.fillStyle='#F4F1EA';ctx.font=F('play',600,true)(52);ctx.fillText('happy',W/2,560);ctx.font=F('corm',600)(120);ctx.fillText('Новый год',W/2,680);ctx.textAlign='left';
+    let y=nyText(ctx,f.cta||'',W/2,800,W-240,300,52,32,F('corm',600),'#F4F1EA','center',1.2);if(f.word)nyChip(ctx,f.word,W/2,y+30,'#F4F1EA','#1d2a20',F('corm',700),'center');}};
+
+// 5. «Сияние»: тёмная ель в огнях, фото в арке с тёплым свечением, огоньки заходят на край фото
+function nyArch(ctx,x,y,w,h){ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x,y+w/2);ctx.arc(x+w/2,y+w/2,w/2,Math.PI,0);ctx.lineTo(x+w,y+h);ctx.closePath();}
+function nyBokeh(ctx,x,y,w,h,seed){const r=nyRng(seed);for(let i=0;i<46;i++){const side=r();let px,py;
+    if(side<.5){px=x+(r()<.5?-r()*40:w+r()*40);py=y+r()*h;}else{px=x+r()*w;py=y+h+(r()-.5)*60;}
+    const R=6+r()*18,a=.35+r()*.5;const g=ctx.createRadialGradient(px,py,0,px,py,R);g.addColorStop(0,`rgba(255,240,200,${a})`);g.addColorStop(.4,`rgba(255,215,140,${a*.6})`);g.addColorStop(1,'rgba(255,200,120,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(px,py,R,0,7);ctx.fill();}}
+function nyGlowPhoto(ctx,p,x,y,w,h,seed){ctx.save();ctx.shadowColor='rgba(255,200,120,.75)';ctx.shadowBlur=70;nyArch(ctx,x,y,w,h);ctx.fillStyle='#2a1d10';ctx.fill();ctx.restore();
+  ctx.save();nyArch(ctx,x,y,w,h);ctx.clip();nyPh(ctx,p,x,y,w,h,.35);ctx.restore();ctx.save();nyArch(ctx,x,y,w,h);ctx.lineWidth=4;ctx.strokeStyle='rgba(255,220,160,.8)';ctx.stroke();ctx.restore();nyBokeh(ctx,x,y,w,h,seed);}
+const NY_GLOW={id:'nyglow',name:'Сияние',full:true,ny:true,bgk:'glow',sample:'play',sw:800,
+  cover(ctx,st,c,p,total){nyBgDraw(ctx,'glow',.15);nyGlowPhoto(ctx,p,W/2-290,110,580,800,3);nyShade(ctx,900,H,.7);
+    nyRich(ctx,c,st,W/2,1010,W-160,300,104,52,F('play',800),'#FFF4DC','#F2C36B','center');nyNick(ctx,'#F2D9A0',W/2,H-46,'center');},
+  slide(ctx,st,s,n,idx,total,p){nyBgDraw(ctx,'glow',.15);nyGlowPhoto(ctx,p,W/2-280,110,560,770,10+idx);nyShade(ctx,880,H,.75);
+    let y=nyText(ctx,nyMonthTitle(s.title),W/2,960,W-160,120,80,44,F('play',800),'#F2C36B','center',1.05);
+    nyText(ctx,s.text,W/2,y+6,W-180,H-y-70,44,28,F('inter',400),'#FFF4DC','center',1.3);nyCnt(ctx,'#FFF4DC',idx,total);},
+  final(ctx,st,f,idx,total,p){nyBgDraw(ctx,'glow',.45);let y=nyText(ctx,f.cta||'С Новым годом!',W/2,560,W-180,420,84,44,F('play',800),'#FFF4DC','center',1.12);
+    if(f.word)nyChip(ctx,f.word,W/2,y+50,'#F2C36B','#2a1a08',null,'center');nyNick(ctx,'#F2D9A0',W/2,H-60,'center');}};
+
+const NY_LAYS={nycal:NY_CAL,nyfilm:NY_FILM,nycard:NY_CARD,nywish:NY_WISH,nypick:NY_PICK,nygal:NY_GAL,nylights:NY_LIGHTS,nycandy:NY_CANDY,nyvinyl:NY_VINYL,nymin:NY_MIN,nyglow:NY_GLOW},NY_YEAR=[NY_GAL,NY_LIGHTS,NY_CANDY,NY_VINYL,NY_MIN,NY_GLOW];let NYSEL=null;
 const FONT_LOADS=['400 40px "JetBrains Mono"','700 40px "JetBrains Mono"','900 100px Inter','800 80px Inter','700 40px Inter','600 30px Inter','500 30px Inter','400 50px Inter','800 80px Unbounded','700 60px Unbounded',
  '900 80px Montserrat','800 60px Montserrat','600 30px Montserrat','500 40px Montserrat','800 80px "Playfair Display"','700 60px "Playfair Display"','italic 600 40px "Playfair Display"',
  '600 80px "Cormorant Garamond"','500 50px "Cormorant Garamond"','700 80px "Cormorant Garamond"','900 80px Rubik','700 60px Rubik','500 30px Rubik','400 40px Rubik'];
@@ -1326,7 +1437,7 @@ function toBlob(cv){return new Promise(r=>cv.toBlob(b=>r(b),'image/jpeg',PHONE?.
 
 // ---------- build plan
 function plan(){const cars=parse(src.value);let jobs=[];
-  const EV=NYSEL?(NYSEL==='year'?3:1):(mixL?V:1);cars.forEach((c,i)=>{for(let v=0;v<EV;v++)jobs.push({c,i,pi:photos.length?0:-1,j:EV>1?v:null});});
+  const EV=NYSEL?(NYSEL==='year'?NY_YEAR.length:1):(mixL?V:1);cars.forEach((c,i)=>{for(let v=0;v<EV;v++)jobs.push({c,i,pi:photos.length?0:-1,j:EV>1?v:null});});
   return {cars,jobs:jobs.slice(0,MAXC)};}
 function refresh(){renderStage();if(typeof renderNY==='function'&&$('nyLays')&&NYSEL)renderNY();if(typeof renderLayouts==='function'&&$('layouts'))renderLayouts();const {cars,jobs}=plan();
   const maxS=cars.reduce((m,c)=>Math.max(m,c.slides.length+2),0),nP=photos.length;
@@ -1349,7 +1460,7 @@ const PHONE=matchMedia('(pointer:coarse)').matches&&Math.min(screen.width,screen
 const WEAK=PHONE&&((navigator.deviceMemory&&navigator.deviceMemory<=3)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4));
 const SLIDE_LIMIT=WEAK?240:PHONE?320:1200,PHONE_MAX=PHONE?30:1e9;let heavyOk=false,partCap=0,partFrom=0,partAll=0;
 async function build(){
-  if(building)return;let {jobs}=plan();const err=$('err');
+  if(building)return;if(NYSEL)await nyPrep();let {jobs}=plan();const err=$('err');
   const tot=jobs.reduce((a,j)=>a+j.c.slides.length+2,0);
   const ALL=jobs.length;
   if(!heavyOk&&(tot>SLIDE_LIMIT||ALL>PHONE_MAX)){let n=0,acc=0;for(const j of jobs){acc+=j.c.slides.length+2;if(acc>SLIDE_LIMIT||n>=PHONE_MAX)break;n++;}partCap=Math.max(1,n);partFrom=0;partAll=ALL;
@@ -1372,7 +1483,7 @@ async function build(){
     const {c,i,pi,j}=jobs[k];const seq=slidesFor(c);const blobs=[],urls=[];const t0=performance.now();
     fly(document.querySelector(`#chips .chip[data-i="${i}"]`),M,null,480);if(pi>=0&&pi<10)fly(document.querySelector(`#phs div[data-i="${pi}"]`),M,photos[pi].url,480);swish();
     $('mStatus').textContent=`выдаю ${k+1} из ${jobs.length}`;
-    const kk=k+(PART?partFrom:0),L=NYSEL?(NYSEL==='year'?NY_YEAR[kk%3]:NY_LAYS[NYSEL]):(mixL?LAYOUTS[(li+kk)%LAYOUTS.length]:layout),st=mixC?STYLES[(si+kk)%STYLES.length]:style;PILL=st.pill?st:null;
+    const kk=k+(PART?partFrom:0),L=NYSEL?(NYSEL==='year'?NY_YEAR[kk%NY_YEAR.length]:NY_LAYS[NYSEL]):(mixL?LAYOUTS[(li+kk)%LAYOUTS.length]:layout),st=mixC?STYLES[(si+kk)%STYLES.length]:style;PILL=st.pill?st:null;
     const P=photos.length,tot=seq.length,enough=P>=tot;
     const pinMap=photos.some(p=>p.slot)?pinSlots(tot):null;
     const ph=n=>{if(pi<0)return null;if(pinMap){if(scope!=='all'&&n>0)return null;const p=pinMap[n];return p?(n===0?p.raw||p.img:p.img):null;}if(n===0)return photos[0].raw||photos[0].img;if(scope!=='all')return null;if(L.odd){if(n===tot-1||n%2===0)return null;const q=(n+1)/2;return q<P?photos[q].img:null;}if(L.full||enough)return n<P?photos[n].img:null;if(P===1||n===tot-1||n%2===1)return null;const q=n/2;return q<P?photos[q].img:null;};
@@ -3616,11 +3727,16 @@ function trialLock(){const n=document.createElement('div');n.className='notice';
   const side=document.querySelector('.side');side.insertBefore(n,side.firstChild);$('go').disabled=true;$('go').firstChild.textContent='Проба использована';}
 $('srcClear').onclick=()=>{src.value='';ls('km-src','');refresh();src.focus();};$('srcDemo').onclick=()=>{src.value=NYSEL?NY_EX[nyKind()]:EXAMPLE;ls('km-src','');refresh();};
 // ---------- Новогоднее оформление
-const NY_OPTS=[['nygal','Мой год · Галерея']];
-const NY_HINTS={year:'Каждый слайд — месяц: в заголовке слайда пиши месяц, например «Январь | что было». Фото встанут на каждый слайд. Каждый текст выйдет в 3 видах: календарь, плёнка и открытка.',
+const NY_OPTS=[['year','Все 6 видов сразу'],['nygal','Галерея'],['nylights','Фотогирлянда'],['nycandy','Карамель'],['nyvinyl','Пластинка'],['nymin','Минимал люкс'],['nyglow','Сияние']];
+const NY_HINTS={year:'Каждый текст выйдет сразу в 6 новогодних видах: галерея, фотогирлянда, карамель, пластинка, минимал и сияние. Каждый слайд — месяц: «Январь | что было». Добавь фото: одно на обложку и по одному на месяц.',
  nycal:'Каждый слайд — месяц: «Январь | что было». Фото на каждом слайде, рядом отрывной календарь.',nyfilm:'Каждый слайд — месяц: «Январь | что было». Фото в кадре плёнки с датой, как на старом фотоаппарате.',
  nycard:'Каждый слайд — месяц: «Январь | что было». Фото в рамке советской новогодней открытки.',
  nygal:'Галерея: красная стена и золотые рамы, рамы переходят со слайда на слайд, поэтому карусель листается как одна длинная картина. Каждый слайд — месяц: «Январь | что было». Добавь фото: по одному на каждый месяц и одно на обложку, в рамах на стыках встанут крупные детали этих же фото.',
+ nylights:'Тёмная ель с огоньками, полароиды висят на нитке с прищепками. Каждый слайд — месяц: «Январь | что было», месяц подпишется на полароиде.',
+ nycandy:'Красно-белые шары, твоё фото внутри большого стеклянного шара, текст на белой плашке.',
+ nyvinyl:'Мой год как альбом: на обложке пластинка с твоим заголовком на этикетке, каждый слайд — трек: фото как обложка альбома, из конверта выглядывает пластинка.',
+ nymin:'Тихо и дорого: глубокая зелёная ель, фото небольшой картиной в тонкой белой рамке, тонкая антиква.',
+ nyglow:'Тёмная ель в огнях, фото в арке с тёплым свечением, огоньки заходят на края фото.',
  nywish:'Каждый слайд — одно желание: «Выспаться хоть раз | почему это важно». На последнем слайде ёлка со всеми шарами.',
  nypick:'На обложке ёлка с номерами. Каждый слайд — предсказание для своего номера: «Год смелости | текст». Лучше всего 6 слайдов.'};
 const NY_EX={year:`Карусель 1
@@ -3650,12 +3766,13 @@ const NY_EX={year:`Карусель 1
 Финал: Какой номер выпал тебе? Напиши в комментариях`};
 function nyKind(){return !NYSEL?null:(NYSEL==='nywish'||NYSEL==='nypick')?NYSEL:'year';}
 const nyPrev={};
-function nyThumb(id){const L=id==='year'?NY_CAL:NY_LAYS[id];if(id==='nygal'){const key='g|'+(photos[0]?photos[0].url:'');if(nyPrev[id]&&nyPrev[id].key===key)return nyPrev[id].url;const cv=document.createElement('canvas');cv.width=W;cv.height=H;try{NY_GAL.cover(cv.getContext('2d'),style,{main:'Мой 2026',accent:'по месяцам'},null,8);}catch(e){}const sm=document.createElement('canvas');sm.width=216;sm.height=288;sm.getContext('2d').drawImage(cv,0,0,216,288);const url=sm.toDataURL('image/jpeg',.7);nyPrev[id]={key,url};return url;}const key=id+'|'+style.id+'|'+(photos[0]?photos[0].url:'');if(nyPrev[id]&&nyPrev[id].key===key)return nyPrev[id].url;
+function nyThumb(id){const L=id==='year'?NY_VINYL:NY_LAYS[id];if(id==='nygal'){const key='g|'+(photos[0]?photos[0].url:'');if(nyPrev[id]&&nyPrev[id].key===key)return nyPrev[id].url;const cv=document.createElement('canvas');cv.width=W;cv.height=H;try{NY_GAL.cover(cv.getContext('2d'),style,{main:'Мой 2026',accent:'по месяцам'},null,8);}catch(e){}const sm=document.createElement('canvas');sm.width=216;sm.height=288;sm.getContext('2d').drawImage(cv,0,0,216,288);const url=sm.toDataURL('image/jpeg',.7);nyPrev[id]={key,url};return url;}const key=id+'|'+style.id+'|'+(photos[0]?photos[0].url:'');if(nyPrev[id]&&nyPrev[id].key===key)return nyPrev[id].url;
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
   const c=id==='nywish'?{main:'Ёлка желаний',accent:'на 2027'}:id==='nypick'?{main:'Выбери шарик',accent:'узнай свой 2027'}:{main:'Мой 2026',accent:'по месяцам'};
   try{L.cover(ctx,style,c,photos[0]?(photos[0].raw||photos[0].img):fakePhoto(),8);}catch(e){}
   const sm=document.createElement('canvas');sm.width=216;sm.height=288;sm.getContext('2d').drawImage(cv,0,0,216,288);const url=sm.toDataURL('image/jpeg',.7);nyPrev[id]={key,url};return url;}
-function renderNY(){const on=!!NYSEL;$('nyOn').setAttribute('aria-pressed',on);$('nyOff').setAttribute('aria-pressed',!on);$('nyLays').hidden=!on;$('nyHint').hidden=!on;
+let nyBgAsked=false;
+function renderNY(){const on=!!NYSEL;if(on&&!nyBgAsked){nyBgAsked=true;Promise.all(Object.keys(NYBG_SRC).map(nyBgLoad)).then(()=>{for(const k in nyPrev)delete nyPrev[k];if(NYSEL)renderNY();});}$('nyOn').setAttribute('aria-pressed',on);$('nyOff').setAttribute('aria-pressed',!on);$('nyLays').hidden=!on;$('nyHint').hidden=!on;
   const mb=$('modeBox');if(mb)mb.hidden=on;const mh=$('modeHint');if(mh&&on)mh.hidden=true;
   if(!on)return;const box=$('nyLays');box.innerHTML='';
   NY_OPTS.forEach(([id,name])=>{const b=document.createElement('button');b.type='button';b.className='lay';b.setAttribute('aria-pressed',NYSEL===id);
