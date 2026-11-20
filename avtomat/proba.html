@@ -554,7 +554,10 @@ const sid=ls('km-style');if(sid)style=STYLES.find(s=>s.id===sid)||style;
 
 // ---------- parsing
 function clean(s){return s.replace(/\*\*|__|`/g,'').replace(/^[\s\-–—•*]+/,'').trim();}
+function unglue(t){// текст, скопированный с телефона, бывает без переносов: «…лучшихКарусель 1Обложка: …Слайд: …»
+  return String(t).replace(/\s*(Карусель\s*№?\s*\d+)(?=[\s.:]*[А-ЯЁ*])/g,'\n$1\n').replace(/\s*((?:Обложка|Хук|Заголовок|Слайд(?:\s*№?\s*\d+)?|Финальный слайд|Финал|Призыв)(?:\s*\([^)]*\))?\s*:)/g,'\n$1');}
 function parse(text){
+  text=unglue(text);
   const out=[];let cur=null,last='',pend=null;
   const push=()=>{if(cur&&(cur.cover||cur.slides.length))out.push(cur);};
   for(let raw of text.split(/\r?\n/)){
