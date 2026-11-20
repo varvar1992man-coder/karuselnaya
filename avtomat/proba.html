@@ -3747,7 +3747,7 @@ function trialLock(){const n=document.createElement('div');n.className='notice';
   const side=document.querySelector('.side');side.insertBefore(n,side.firstChild);$('go').disabled=true;$('go').firstChild.textContent='Проба использована';}
 $('srcClear').onclick=()=>{src.value='';ls('km-src','');refresh();src.focus();};$('srcDemo').onclick=()=>{src.value=NYSEL?NY_EX[nyKind()]:EXAMPLE;ls('km-src','');refresh();};
 // ---------- Новогоднее оформление
-const NY_OPTS=[['year','Все 6 видов сразу'],['nygal','Галерея'],['nylights','Фотогирлянда'],['nycandy','Карамель'],['nyvinyl','Пластинка'],['nymin','Минимал люкс'],['nyglow','Сияние']];
+const NY_OPTS=[['nylights','Фотогирлянда']];
 const NY_HINTS={year:'Каждый текст выйдет сразу в 6 новогодних видах: галерея, фотогирлянда, карамель, пластинка, минимал и сияние. Каждый слайд — месяц: «Январь | что было». Добавь фото: одно на обложку и по одному на месяц.',
  nycal:'Каждый слайд — месяц: «Январь | что было». Фото на каждом слайде, рядом отрывной календарь.',nyfilm:'Каждый слайд — месяц: «Январь | что было». Фото в кадре плёнки с датой, как на старом фотоаппарате.',
  nycard:'Каждый слайд — месяц: «Январь | что было». Фото в рамке советской новогодней открытки.',
