@@ -1323,7 +1323,7 @@ const NY_GAL={id:'nygal',name:'Мой год · Галерея',full:true,ny:tru
 // ===== Пять новогодних видов на фото-фонах (фоны лежат рядом: bg/*.jpg, грузятся только когда нужны)
 const NYBG={};const NYBG_SRC={lights:'bg/ny_lights.jpg',candy:'bg/ny_candy.jpg',vinyl:'bg/ny_vinyl.jpg',min:'bg/ny_min.jpg',glow:'bg/ny_glow.jpg'};
 function nyBgLoad(k){if(NYBG[k])return NYBG[k].p;const im=new Image();const p=new Promise(ok=>{im.onload=()=>ok(im);im.onerror=()=>ok(null);});im.src=NYBG_SRC[k];NYBG[k]={im,p};return p;}
-async function nyPrep(){const L=NYSEL==='year'?NY_YEAR:[NY_LAYS[NYSEL]];await Promise.all(L.filter(l=>l&&l.bgk).map(l=>nyBgLoad(l.bgk)));}
+async function nyPrep(){const L=NYSEL==='year'?NY_YEAR:[NY_LAYS[NYSEL]];await Promise.all(L.filter(l=>l&&l.bgk).flatMap(l=>(l.bgks||[l.bgk]).map(nyBgLoad)));}
 function nyBgDraw(ctx,k,dark){const e=NYBG[k];if(e&&e.im.complete&&e.im.naturalWidth)ctx.drawImage(e.im,0,0,W,H);else{ctx.fillStyle='#0f1a14';ctx.fillRect(0,0,W,H);}
   if(dark){ctx.fillStyle=`rgba(0,0,0,${dark})`;ctx.fillRect(0,0,W,H);}}
 function nyShade(ctx,y0,y1,a){const g=ctx.createLinearGradient(0,y0,0,y1);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${a})`);ctx.fillStyle=g;ctx.fillRect(0,y0,W,y1-y0);}
@@ -1447,8 +1447,71 @@ const NY_GLOW={id:'nyglow',name:'Сияние',full:true,ny:true,bgk:'glow',samp
   final(ctx,st,f,idx,total,p){nyBgDraw(ctx,'glow',.45);let y=nyText(ctx,f.cta||'С Новым годом!',W/2,560,W-180,420,84,44,F('play',800),'#FFF4DC','center',1.12);
     if(f.word)nyChip(ctx,f.word,W/2,y+50,'#F2C36B','#2a1a08',null,'center');nyNick(ctx,'#F2D9A0',W/2,H-60,'center');}};
 
-const NY_LAYS={nycal:NY_CAL,nyfilm:NY_FILM,nycard:NY_CARD,nywish:NY_WISH,nypick:NY_PICK,nygal:NY_GAL,nylights:NY_LIGHTS,nycandy:NY_CANDY,nyvinyl:NY_VINYL,nymin:NY_MIN,nyglow:NY_GLOW},NY_YEAR=[NY_GAL,NY_LIGHTS,NY_CANDY,NY_VINYL,NY_MIN,NY_GLOW];let NYSEL=null;
-const FONT_LOADS=['400 40px "Bad Script"','400 40px Neucha','400 40px "JetBrains Mono"','700 40px "JetBrains Mono"','900 100px Inter','800 80px Inter','700 40px Inter','600 30px Inter','500 30px Inter','400 50px Inter','800 80px Unbounded','700 60px Unbounded',
+// ===== «Снежный шар»: ты фигуркой внутри шара (вырезанное фото) или фото окошком; полка с шарами через все слайды
+NYBG_SRC.globeA='bg/ny_globe_a.jpg';NYBG_SRC.globeB='bg/ny_globe_b.jpg';NYBG_SRC.globeC='bg/ny_globe_c.jpg';
+// геометрия шара на каждом фоне: центр, радиус, верх сугроба, верх подставки
+const GLB={globeA:{x:538,y:652,r:401,m:838,base:960},globeB:{x:538,y:651,r:318,m:789,base:905},globeC:{x:535,y:669,r:312,m:826,base:885}};
+function glbFor(kind,idx,total){if(kind==='cover')return {k:'globeA',flip:false};if(kind==='final')return {k:'globeC',flip:false};return {k:'globeB',flip:idx%2===0};}
+function glbGeo(g){const o=GLB[g.k];return g.flip?{...o,x:W-o.x}:o;}
+function imgCut(img){if(!img)return null;if(img._cut!==undefined)return img._cut;let res=null;
+  try{const S=128,c=document.createElement('canvas');const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,k=S/Math.max(iw,ih);c.width=Math.max(1,Math.round(iw*k));c.height=Math.max(1,Math.round(ih*k));
+    const x=c.getContext('2d');x.drawImage(img,0,0,c.width,c.height);const d=x.getImageData(0,0,c.width,c.height).data;let tr=0,x0=1e9,y0=1e9,x1=-1,y1=-1;
+    for(let yy=0;yy<c.height;yy++)for(let xx=0;xx<c.width;xx++){const a=d[(yy*c.width+xx)*4+3];if(a<40)tr++;else{if(xx<x0)x0=xx;if(yy<y0)y0=yy;if(xx>x1)x1=xx;if(yy>y1)y1=yy;}}
+    if(tr>c.width*c.height*.08&&x1>x0)res={x:x0/k,y:y0/k,w:(x1-x0+1)/k,h:(y1-y0+1)/k};}catch(e){}
+  img._cut=res;return res;}
+function glbSnowFront(ctx,g,o){// сугроб спереди: заново кладём снег с фона поверх ног фигурки, верх мягко растушёван
+  const e=NYBG[g.k];if(!e||!e.im.complete)return;const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  x.save();if(g.flip){x.translate(W,0);x.scale(-1,1);}x.drawImage(e.im,0,0,W,H);x.restore();
+  x.globalCompositeOperation='destination-in';const gr=x.createLinearGradient(0,o.m-10,0,o.m+38);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,1)');x.fillStyle=gr;
+  x.beginPath();x.ellipse(o.x,o.y,o.r-4,o.r-4,0,0,7);x.fill();ctx.drawImage(c,0,0);}
+function glbGlass(ctx,g,o){// блики стекла поверх фото: фон в режиме «экран» внутри шара + мягкая виньетка по краю
+  const e=NYBG[g.k];ctx.save();ctx.beginPath();ctx.arc(o.x,o.y,o.r-3,0,7);ctx.clip();
+  if(e&&e.im.complete){ctx.globalCompositeOperation='screen';ctx.globalAlpha=.55;ctx.save();if(g.flip){ctx.translate(W,0);ctx.scale(-1,1);}ctx.drawImage(e.im,0,0,W,H);ctx.restore();ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;}
+  const v=ctx.createRadialGradient(o.x,o.y,o.r*.62,o.x,o.y,o.r);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(10,6,2,.38)');ctx.fillStyle=v;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);
+  const h=ctx.createRadialGradient(o.x-o.r*.42,o.y-o.r*.48,0,o.x-o.r*.42,o.y-o.r*.48,o.r*.55);h.addColorStop(0,'rgba(255,255,255,.22)');h.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=h;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);
+  ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(o.x,o.y,o.r*.86,Math.PI*1.08,Math.PI*1.42);ctx.stroke();ctx.restore();}
+function glbScene(ctx,kind,idx,total,img){const g=glbFor(kind,idx,total),o=glbGeo(g);
+  ctx.save();if(g.flip){ctx.translate(W,0);ctx.scale(-1,1);}nyBgDraw(ctx,g.k,0);ctx.restore();
+  if(img){const cut=imgCut(img);ctx.save();ctx.beginPath();ctx.rect(0,0,W,o.base);ctx.clip();ctx.beginPath();ctx.arc(o.x,o.y,o.r-4,0,7);ctx.clip();
+    if(cut){// фигурка стоит на снегу
+      const top=o.y-o.r*.62,foot=o.m+30,hh=foot-top,s=Math.min(hh/cut.h,(o.r*1.25)/cut.w),dw=cut.w*s,dh=cut.h*s;
+      ctx.shadowColor='rgba(0,0,0,.35)';ctx.shadowBlur=18;ctx.shadowOffsetY=6;
+      ctx.drawImage(img,cut.x,cut.y,cut.w,cut.h,o.x-dw/2,foot-dh,dw,dh);ctx.shadowColor='transparent';}
+    else{const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,s=Math.max(2*o.r/iw,2*o.r/ih);ctx.drawImage(img,o.x-iw*s/2,o.y-o.r+(2*o.r-ih*s)*.35,iw*s,ih*s);// обычное фото: тёплый тон и глубина, чтобы читалось как стекло
+      ctx.globalCompositeOperation='multiply';ctx.fillStyle='rgba(214,170,120,1)';ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);ctx.globalCompositeOperation='source-over';
+      const dv=ctx.createRadialGradient(o.x,o.y-o.r*.1,o.r*.35,o.x,o.y,o.r);dv.addColorStop(0,'rgba(0,0,0,0)');dv.addColorStop(1,'rgba(20,10,4,.7)');ctx.fillStyle=dv;ctx.fillRect(o.x-o.r,o.y-o.r,o.r*2,o.r*2);}
+    ctx.restore();glbSnowFront(ctx,g,o);glbGlass(ctx,g,o);}
+  return o;}
+function glbTag(ctx,o,text,flip){// бумажная бирка на ниточке у подставки
+  const bx=flip?o.x+o.r*.62:o.x-o.r*.62,by=o.base+40,tw=250,th=96,ang=flip?.08:-.08,tx=flip?bx+30:bx-30-tw,ty=by+60;
+  ctx.save();ctx.strokeStyle='rgba(235,220,190,.85)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(bx,by);ctx.quadraticCurveTo((bx+tx+tw/2)/2,by+70,tx+(flip?16:tw-16),ty+th/2);ctx.stroke();
+  ctx.translate(tx+tw/2,ty+th/2);ctx.rotate(ang);ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=14;ctx.shadowOffsetY=6;ctx.fillStyle='#EFE3CB';
+  ctx.beginPath();if(flip){ctx.moveTo(-tw/2,-th/2+22);ctx.lineTo(-tw/2+26,-th/2);ctx.lineTo(tw/2,-th/2);ctx.lineTo(tw/2,th/2);ctx.lineTo(-tw/2+26,th/2);ctx.lineTo(-tw/2,th/2-22);}
+  else{ctx.moveTo(tw/2,-th/2+22);ctx.lineTo(tw/2-26,-th/2);ctx.lineTo(-tw/2,-th/2);ctx.lineTo(-tw/2,th/2);ctx.lineTo(tw/2-26,th/2);ctx.lineTo(tw/2,th/2-22);}ctx.closePath();ctx.fill();ctx.shadowColor='transparent';
+  ctx.fillStyle='#6b5a42';ctx.beginPath();ctx.arc(flip?-tw/2+18:tw/2-18,0,6,0,7);ctx.fill();
+  ctx.fillStyle='#3a2a1a';ctx.textAlign='center';ctx.font=F('script',400)(50);ctx.fillText(text,flip?12:-12,16,tw-60);ctx.restore();}
+// надпись по дуге над шаром: антиква заглавными, широкая разрядка
+function glbArc(ctx,text,cx,cy,R,size,col){ctx.save();ctx.font=F('corm',500)(size);ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  const ch=[...String(text).toUpperCase()];let sp,ws,tot;const meas=()=>{sp=size*.32;ws=ch.map(c=>ctx.measureText(c).width+sp);tot=ws.reduce((a,b)=>a+b,0)-sp;};meas();
+  while(tot/R>2.1&&size>34){size-=2;ctx.font=F('corm',500)(size);meas();}let a=-Math.PI/2-tot/R/2;
+  ch.forEach((c,i)=>{const w=ws[i]-sp,mid=a+w/2/R;ctx.save();ctx.translate(cx+Math.cos(mid)*R,cy+Math.sin(mid)*R);ctx.rotate(mid+Math.PI/2);ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=10;ctx.fillText(c,0,0);ctx.restore();a+=ws[i]/R;});ctx.restore();}
+function glbScript(ctx,text,x,y,size,col,maxW){ctx.save();ctx.font=F('script',400)(size);ctx.fillStyle=col;ctx.textAlign='center';ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=14;
+  let s=size;while(s>30&&ctx.measureText(text).width>(maxW||W-120)){s-=4;ctx.font=F('script',400)(s);}ctx.fillText(text,x,y);ctx.shadowBlur=4;ctx.shadowColor='rgba(0,0,0,.6)';ctx.fillText(text,x,y);ctx.restore();}
+const NY_ORD=['первая','вторая','третья','четвёртая','пятая','шестая','седьмая','восьмая','девятая','десятая','одиннадцатая','двенадцатая','тринадцатая','четырнадцатая','пятнадцатая'];
+const NY_GLOBE={id:'nyglobe',name:'Снежный шар',full:true,ny:true,bgk:'globeA',bgks:['globeA','globeB','globeC'],globe:true,sample:'corm',sw:500,
+  globeClip(n,total){const kind=n===0?'cover':n===total-1?'final':'slide';const o=glbGeo(glbFor(kind,n+1,total));return {x:o.x,y:o.y,r:o.r-6,bottom:o.base};},
+  cover(ctx,st,c,p,total){const o=glbScene(ctx,'cover',1,total,p);glbArc(ctx,c.main||'Мой 2026',o.x,o.y,o.r+44,78,'#FFF4E2');
+    if(c.accent)glbScript(ctx,c.accent,W/2,o.y-o.r+104,96,'#FFF4E2');nyArrow(ctx,W/2-260,1335,520,'#FFF4E2');nyNick(ctx,'#F2DDB8',80,H-30);},
+  slide(ctx,st,s,n,idx,total,p){const o=glbScene(ctx,'slide',idx,total,p);glbArc(ctx,nyMonthTitle(s.title),o.x,o.y,o.r+40,74,'#FFF4E2');
+    glbScript(ctx,'глава '+(NY_ORD[idx-2]||String(idx-1)),o.x,o.y-o.r+66,64,'#FFE7BE');
+    ctx.save();const gr=ctx.createLinearGradient(0,1000,0,H);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.6)');ctx.fillStyle=gr;ctx.fillRect(0,1000,W,H-1000);ctx.restore();
+    nyText(ctx,s.text,W/2,1120,W-150,H-1120-50,50,32,F('corm',600),'#FFF4E2','center',1.22);nyCnt(ctx,'#FFF4E2',idx,total);},
+  final(ctx,st,f,idx,total,p){const o=glbScene(ctx,'final',total,total,null);glbArc(ctx,'Новая глава · '+(nyYear()+1),o.x,o.y,o.r+40,64,'#FFF4E2');
+    nyText(ctx,f.cta||'А что будет внутри в 2027?',W/2,1110,W-140,200,84,44,F('script',400),'#FFF4E2','center',1.12);
+    if(f.word)nyChip(ctx,f.word,W/2,1300,'#6E0006','#FFF4E2',F('hand',400),'center');nyNick(ctx,'#F2DDB8',W/2,H-24,'center');}};
+
+const NY_LAYS={nycal:NY_CAL,nyfilm:NY_FILM,nycard:NY_CARD,nywish:NY_WISH,nypick:NY_PICK,nygal:NY_GAL,nylights:NY_LIGHTS,nycandy:NY_CANDY,nyvinyl:NY_VINYL,nymin:NY_MIN,nyglow:NY_GLOW,nyglobe:NY_GLOBE},NY_YEAR=[NY_GAL,NY_LIGHTS,NY_CANDY,NY_VINYL,NY_MIN,NY_GLOW];let NYSEL=null;
+const FONT_LOADS=['500 40px "Cormorant Garamond"','600 40px "Cormorant Garamond"','700 40px "Cormorant Garamond"','400 40px "Bad Script"','400 40px Neucha','400 40px "JetBrains Mono"','700 40px "JetBrains Mono"','900 100px Inter','800 80px Inter','700 40px Inter','600 30px Inter','500 30px Inter','400 50px Inter','800 80px Unbounded','700 60px Unbounded',
  '900 80px Montserrat','800 60px Montserrat','600 30px Montserrat','500 40px Montserrat','800 80px "Playfair Display"','700 60px "Playfair Display"','italic 600 40px "Playfair Display"',
  '600 80px "Cormorant Garamond"','500 50px "Cormorant Garamond"','700 80px "Cormorant Garamond"','900 80px Rubik','700 60px Rubik','500 30px Rubik','400 40px Rubik'];
 
@@ -3492,17 +3555,21 @@ function snowFlakes(){if(snowFl)return snowFl;let x=987654321;const rnd=()=>{x^=
     const rr=cr?r*2.2:r,bl=cr?ly.blur*.6:ly.blur*(.5+r/ly.r[1]);L.push({x:rnd()*W,y:rnd()*MH,s:snowSprite(rr,bl,cr),s2:snowSprite(rr,bl,cr,true),a:ly.a[0]+rnd()*(ly.a[1]-ly.a[0]),k:ly.k,
       sw:ly.sw[0]+rnd()*(ly.sw[1]-ly.sw[0]),j:1+Math.floor(rnd()*2),ph:rnd()*7,rot:cr?(rnd()<.5?-1:1):0});}});
   snowFl={L,MH};return snowFl;}
-function snowDraw(ctx,u,light){const {L,MH}=snowFlakes();
-  for(const q of L){const y=((q.y+q.k*MH*u)%MH)-70,x=q.x+Math.sin(Math.PI*2*q.j*u+q.ph)*q.sw+Math.sin(Math.PI*2*(q.j+1)*u+q.ph*1.7)*q.sw*.3;
+function snowDraw(ctx,u,light,clip){const {L,MH}=snowFlakes();if(clip){ctx.save();ctx.beginPath();ctx.rect(0,0,W,clip.bottom);ctx.clip();ctx.beginPath();ctx.arc(clip.x,clip.y,clip.r,0,7);ctx.clip();}
+  // внутри шара снег гуще: три прохода со сдвигом (сдвиг постоянный, поэтому повтор остаётся бесшовным)
+  const passes=clip?[[0,0],[.33,.41],[.67,.77]]:[[0,0]];
+  for(const [oy,ox] of passes)for(const q of L){const y=((q.y+oy*MH+q.k*MH*u)%MH)-70,x=((q.x+ox*W)%W)+Math.sin(Math.PI*2*q.j*u+q.ph)*q.sw+Math.sin(Math.PI*2*(q.j+1)*u+q.ph*1.7)*q.sw*.3;
     const sp=light?q.s2:q.s;ctx.globalAlpha=light?Math.min(1,q.a+.2):q.a;if(q.rot){ctx.save();ctx.translate(x,y);ctx.rotate(q.rot*u*Math.PI*2);ctx.drawImage(sp,-sp.width/2,-sp.height/2);ctx.restore();}
     else ctx.drawImage(sp,x-sp.width/2,y-sp.height/2);}
-  ctx.globalAlpha=1;}
+  ctx.globalAlpha=1;if(clip)ctx.restore();}
+function snowClipFor(r,n){const L=r&&typeof NY_LAYS!=='undefined'?NY_LAYS[r.lid]:null;return L&&L.globeClip?L.globeClip(n,r.blobs?r.blobs.length:r.urls.length):null;}
+function snowNeed(r,n){return snowFor(n)||!!snowClipFor(r,n);}
 function imgLight(im){try{const c=document.createElement('canvas');c.width=16;c.height=20;const x=c.getContext('2d');x.drawImage(im,0,0,16,20);const d=x.getImageData(0,0,16,20).data;let s=0;for(let i=0;i<d.length;i+=4)s+=.299*d[i]+.587*d[i+1]+.114*d[i+2];return s/(d.length/4)>165;}catch(e){return false;}}
 function snowFor(n){return SNOW==='all'||(SNOW==='cover'&&n===0);}
 function snowCanVideo(){return typeof VideoEncoder!=='undefined'||(typeof MediaRecorder!=='undefined'&&HTMLCanvasElement.prototype.captureStream);}
 function blobImg(b){return new Promise((ok,bad)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=bad;im.src=URL.createObjectURL(b);});}
-async function snowVideo(jpg){const im=await blobImg(jpg);const cv=document.createElement('canvas');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
-  const N=SNOW_T*SNOW_FPS,lt=imgLight(im),frame=f=>{ctx.drawImage(im,0,0,W,H);snowDraw(ctx,f/N,lt);};
+async function snowVideo(jpg,clip){const im=await blobImg(jpg);const cv=document.createElement('canvas');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
+  const N=SNOW_T*SNOW_FPS,lt=clip?false:imgLight(im),frame=f=>{ctx.drawImage(im,0,0,W,H);snowDraw(ctx,f/N,lt,clip);};
   if(typeof VideoEncoder!=='undefined'){
     for(const codec of ['avc1.640028','avc1.4d0028','avc1.42003e']){const cfg={codec,width:W,height:H,bitrate:4e6,framerate:SNOW_FPS};
       let ok=false;try{ok=(await VideoEncoder.isConfigSupported(cfg)).supported;}catch(e){}if(!ok)continue;
@@ -3519,19 +3586,19 @@ async function snowVideo(jpg){const im=await blobImg(jpg);const cv=document.crea
   URL.revokeObjectURL(im.src);return null;}
 // файлы одной карусели: слайды со снегом становятся видео
 async function carFiles(r,prog){const out=[];for(let n=0;n<r.blobs.length;n++){const b=r.blobs[n];
-    if(snowFor(n)&&snowCanVideo()){if(!r.vids)r.vids={};if(!r.vids[n]){prog&&prog();const v=await snowVideo(b).catch(()=>null);if(v)r.vids[n]=v;}
+    if(snowNeed(r,n)&&snowCanVideo()){if(!r.vids)r.vids={};if(!r.vids[n]){prog&&prog();const v=await snowVideo(b,snowClipFor(r,n)).catch(()=>null);if(v)r.vids[n]=v;}
       const v=r.vids[n];if(v){out.push(new File([v.blob],`${r.name}_slide${n+1}.${v.ext}`,{type:v.blob.type}));continue;}}
     out.push(new File([b],`${r.name}_slide${n+1}.jpg`,{type:'image/jpeg'}));}
   return out;}
-async function filesOf(items){let total=0,doneN=0;if(SNOW!=='off')items.forEach(r=>r.blobs.forEach((b,n)=>{if(snowFor(n)&&!(r.vids&&r.vids[n]))total++;}));
+async function filesOf(items){let total=0,doneN=0;items.forEach(r=>r.blobs.forEach((b,n)=>{if(snowNeed(r,n)&&!(r.vids&&r.vids[n]))total++;}));
   const prog=()=>{doneN++;toastStay(`Делаю видео со снегом: ${doneN} из ${total}…`);};const all=[];for(const r of items)all.push(...await carFiles(r,prog));if(total)toastStay('');return all;}
 function toastStay(m){const t=$('toast');if(!m){t.hidden=true;return;}t.textContent=m;t.hidden=false;clearTimeout(tt);}
 // живой снег в просмотре слайда
 let snowRAF=0;function snowLive(){cancelAnimationFrame(snowRAF);const z=$('zoom'),img=$('zoomImg');let c=$('snowCv');
   if(!c){c=document.createElement('canvas');c.id='snowCv';c.width=W;c.height=H;c.style.cssText='position:absolute;pointer-events:none;';img.parentNode.appendChild(c);if(getComputedStyle(img.parentNode).position==='static')img.parentNode.style.position='relative';}
-  const on=SNOW!=='off'&&z&&!z.hidden&&snowFor(typeof vN==='number'?vN:0);c.hidden=!on;if(!on)return;const x=c.getContext('2d'),t0=performance.now();const lt=img.complete&&img.naturalWidth?imgLight(img):false;
+  const rr0=typeof results!=='undefined'?results[vK]:null,nn=typeof vN==='number'?vN:0,clip=snowClipFor(rr0,nn);const on=z&&!z.hidden&&((SNOW!=='off'&&snowFor(nn))||!!clip);c.hidden=!on;if(!on)return;const x=c.getContext('2d'),t0=performance.now();const lt=clip?false:(img.complete&&img.naturalWidth?imgLight(img):false);
   const loop=()=>{if(z.hidden){c.hidden=true;return;}const r=img.getBoundingClientRect(),pr=img.parentNode.getBoundingClientRect();c.style.left=(r.left-pr.left)+'px';c.style.top=(r.top-pr.top)+'px';c.style.width=r.width+'px';c.style.height=r.height+'px';
-    x.clearRect(0,0,W,H);snowDraw(x,((performance.now()-t0)/1000/SNOW_T)%1,lt);snowRAF=requestAnimationFrame(loop);};loop();}
+    x.clearRect(0,0,W,H);snowDraw(x,((performance.now()-t0)/1000/SNOW_T)%1,lt,clip);snowRAF=requestAnimationFrame(loop);};loop();}
 
 // ---------- saving
 function canShare(){try{return !!(navigator.canShare&&navigator.canShare({files:[new File([new Blob(['x'],{type:'image/jpeg'})],'a.jpg',{type:'image/jpeg'})]}))&&/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)&&!dl;}catch(e){return false;}}
@@ -3539,7 +3606,7 @@ async function zipOf(items){if(typeof JSZip==='undefined')throw new Error('nozip
   const fl=await filesOf(items);items.forEach(r=>{const f=items.length>1?z.folder(r.name):z;fl.filter(x=>x.name.startsWith(r.name+'_slide')).forEach(x=>f.file(x.name,x));});
   return z.generateAsync({type:'blob'});}
 async function shareOrZip(items,btn,zipName){
-  const need=SNOW!=='off'&&snowCanVideo()&&items.some(r=>r.blobs.some((b,n)=>snowFor(n)&&!(r.vids&&r.vids[n])));
+  const need=snowCanVideo()&&items.some(r=>r.blobs.some((b,n)=>snowNeed(r,n)&&!(r.vids&&r.vids[n])));
   if(need&&canShare()){if(btn)btn.disabled=true;try{await filesOf(items);toast('Видео со снегом готовы. Нажми ещё раз, чтобы сохранить');}catch(e){toast('Не получилось сделать видео');}if(btn)btn.disabled=false;return;}
   if(canShare()){try{const files=await filesOf(items);await navigator.share({files});}catch(e){}return;}
   const t=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent='Упаковываю…';}try{await deliver(await zipOf(items),zipName);}catch(e){toast('Не получилось собрать архив');}if(btn){btn.textContent=t;btn.disabled=false;}}
@@ -3747,11 +3814,12 @@ function trialLock(){const n=document.createElement('div');n.className='notice';
   const side=document.querySelector('.side');side.insertBefore(n,side.firstChild);$('go').disabled=true;$('go').firstChild.textContent='Проба использована';}
 $('srcClear').onclick=()=>{src.value='';ls('km-src','');refresh();src.focus();};$('srcDemo').onclick=()=>{src.value=NYSEL?NY_EX[nyKind()]:EXAMPLE;ls('km-src','');refresh();};
 // ---------- Новогоднее оформление
-const NY_OPTS=[['nylights','Фотогирлянда']];
+const NY_OPTS=[['nylights','Фотогирлянда'],['nyglobe','Снежный шар']];
 const NY_HINTS={year:'Каждый текст выйдет сразу в 6 новогодних видах: галерея, фотогирлянда, карамель, пластинка, минимал и сияние. Каждый слайд — месяц: «Январь | что было». Добавь фото: одно на обложку и по одному на месяц.',
  nycal:'Каждый слайд — месяц: «Январь | что было». Фото на каждом слайде, рядом отрывной календарь.',nyfilm:'Каждый слайд — месяц: «Январь | что было». Фото в кадре плёнки с датой, как на старом фотоаппарате.',
  nycard:'Каждый слайд — месяц: «Январь | что было». Фото в рамке советской новогодней открытки.',
  nygal:'Галерея: красная стена и золотые рамы, рамы переходят со слайда на слайд, поэтому карусель листается как одна длинная картина. Каждый слайд — месяц: «Январь | что было». Добавь фото: по одному на каждый месяц и одно на обложку, в рамах на стыках встанут крупные детали этих же фото.',
+ nyglobe:'Ты фигуркой внутри снежного шара, а в шаре всегда идёт живой снег. Лучше всего вырезанные фото: на iPhone долго держи палец на человеке в фото → «Поделиться» → «Сохранить». Обычное фото встанет в шар окошком. Каждый слайд — месяц: «Январь | что было». Слайды со снегом сохраняются как видео.',
  nylights:'Тёмная ель с огоньками, полароиды висят на нитке с прищепками. Каждый слайд — месяц: «Январь | что было», месяц подпишется на полароиде.',
  nycandy:'Красно-белые шары, твоё фото внутри большого стеклянного шара, текст на белой плашке.',
  nyvinyl:'Мой год как альбом: на обложке пластинка с твоим заголовком на этикетке, каждый слайд — трек: фото как обложка альбома, из конверта выглядывает пластинка.',
